@@ -1,0 +1,41 @@
+# Vertex AI Training Configuration
+
+# Google Cloud settings
+project_id: "your-project-id"  # Replace with your GCP project ID
+location: "us-central1"
+bucket_name: "your-bucket-name"  # Replace with your GCS bucket name
+
+# Data paths
+dataset_local_path: "../data/augmented_dataset.csv"
+dataset_gcs_path: "data/augmented_dataset.csv"
+model_output_path: "models/migraine-classifier"
+
+# Model architecture
+model:
+  input_dim: 23
+  hidden_dims: [64, 32]
+  num_classes: 8
+  dropout_rate: 0.3
+
+# Training hyperparameters
+training:
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  test_split: 0.2
+  random_seed: 42
+
+# Compute resources
+compute:
+  machine_type: "n1-standard-4"
+  accelerator_type: null  # "NVIDIA_TESLA_T4" for GPU
+  accelerator_count: 0    # 1 for GPU
+  replica_count: 1
+
+# Online learning settings (for backend)
+online_learning:
+  learning_rate: 0.0001  # Lower LR for online updates
+  replay_buffer_size: 100
+  replay_frequency: 10  # Replay every N updates
+  save_frequency: 5  # Save to GCS every N updates
+  confidence_threshold: 0.8  # Only update if confidence < threshold
