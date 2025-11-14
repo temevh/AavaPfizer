@@ -1,11 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import { Ionicons } from '@expo/vector-icons';
+
+type MainScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
+
+interface MainScreenProps {
+  navigation: MainScreenNavigationProp;
+}
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
 
-export default function HomeScreen() {
+export function MainScreen({ navigation }: MainScreenProps) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={[styles.content, { maxWidth }]}>
@@ -17,21 +32,21 @@ export default function HomeScreen() {
 
         {/* Emergency Button */}
         <Pressable
-          onPress={() => Alert.alert('Emergency Help', 'Emergency tips will be shown here')}
+          onPress={() => navigation.navigate('Emergency')}
           style={({ pressed }) => [
             styles.emergencyButton,
             pressed && styles.emergencyButtonPressed,
           ]}
         >
-          <Ionicons name="alert-circle" size={64} color="#fff" style={styles.emergencyIcon} />
-          <Text style={styles.emergencyText}>Emergency Help</Text>
-          <Text style={styles.emergencySubtext}>Tap for immediate migraine relief tips</Text>
+            <Ionicons name="alert-circle" size={64} color="#fff" style={styles.emergencyIcon} />
+            <Text style={styles.emergencyText}>Emergency Help</Text>
+            <Text style={styles.emergencySubtext}>Tap for immediate migraine relief tips</Text>
         </Pressable>
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Pressable
-            onPress={() => Alert.alert('Log Migraine', 'Tracking feature coming soon')}
+            onPress={() => navigation.navigate('Tracking')}
             style={({ pressed }) => [
               styles.actionButton,
               pressed && styles.actionButtonPressed,
@@ -47,7 +62,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => Alert.alert('Diary Entry', 'Diary feature coming soon')}
+            onPress={() => navigation.navigate('Diary')}
             style={({ pressed }) => [
               styles.actionButton,
               pressed && styles.actionButtonPressed,
@@ -66,7 +81,7 @@ export default function HomeScreen() {
         {/* Navigation Cards */}
         <View style={styles.navCards}>
           <Pressable
-            onPress={() => Alert.alert('Dashboard', 'Dashboard feature coming soon')}
+            onPress={() => navigation.navigate('Dashboard')}
             style={({ pressed }) => [
               styles.navCard,
               pressed && styles.navCardPressed,
@@ -79,7 +94,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => Alert.alert('Patterns', 'Pattern detection coming soon')}
+            onPress={() => navigation.navigate('Patterns')}
             style={({ pressed }) => [
               styles.navCard,
               pressed && styles.navCardPressed,
@@ -126,10 +141,7 @@ const styles = StyleSheet.create({
   },
   emergencyButton: {
     width: '100%',
-    backgroundColor: '#dc2626',
     borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
     marginBottom: 24,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -140,6 +152,10 @@ const styles = StyleSheet.create({
   },
   emergencyButtonPressed: {
     transform: [{ scale: 0.98 }],
+  },
+  emergencyGradient: {
+    padding: 32,
+    alignItems: 'center',
   },
   emergencyIcon: {
     marginBottom: 12,
