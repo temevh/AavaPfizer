@@ -222,3 +222,25 @@ class ClearSessionResponse(BaseModel):
     status: str = Field(..., description="Clear status")
     samples_cleared: int = Field(..., description="Number of samples cleared")
     message: str = Field(..., description="Status message")
+
+
+class ChatRequest(BaseModel):
+    """Request for Gemini chat endpoint."""
+
+    message: str = Field(..., min_length=1, description="User message to send to Gemini")
+    system_prompt: Optional[str] = Field(None, description="Optional system prompt for context")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "message": "What are the common symptoms of migraine?",
+                "system_prompt": "You are a helpful medical assistant specializing in migraines."
+            }
+        }
+
+
+class ChatResponse(BaseModel):
+    """Response from Gemini chat endpoint."""
+
+    response: str = Field(..., description="Gemini's response")
+    timestamp: str = Field(..., description="Response timestamp")
