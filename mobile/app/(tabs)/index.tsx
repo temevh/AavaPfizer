@@ -1,21 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
+<<<<<<< HEAD
 import { NavigationBar } from '@/components/NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+=======
+import { useUser } from '@/contexts/UserContext';
+>>>>>>> ced609b (added context)
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
 
 export default function HomeScreen() {
+<<<<<<< HEAD
   const router = useRouter();
   const { darkMode } = useTheme();
+=======
+>>>>>>> ced609b (added context)
   
-  const user = {
-    name: "Alex"
-  }
+  const { userData } = useUser();
+  console.log("User Data in HomeScreen:", userData);
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -26,8 +31,13 @@ export default function HomeScreen() {
         <View style={[styles.content, { maxWidth }]}>
           {/* Header */}
           <View style={styles.header}>
+<<<<<<< HEAD
             <Text style={[styles.title, darkMode && styles.titleDark]}>Hello {user.name}</Text>
             <Text style={[styles.subtitle, darkMode && styles.subtitleDark]}>How are we feeling today?</Text>
+=======
+            <Text style={styles.title}>Hello {userData?.name ?? ""}!</Text>
+            <Text style={styles.subtitle}>How are we feeling today?</Text>
+>>>>>>> ced609b (added context)
           </View>
 
           {/* Emergency Button */}

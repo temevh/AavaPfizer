@@ -1,3 +1,4 @@
+import { useUser } from '@/contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -19,23 +20,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [ageBracket, setAgeBracket] = useState('');
+  const { setUserData } = useUser();
 
   const submitData = () => {
     const userData = {
         name,
-        ageBracket: (() => {
-          if (ageBracket.includes('-')) {
-            const [startStr, endStr] = ageBracket.split('-');
-            const start = parseInt(startStr, 10);
-            const end = parseInt(endStr, 10);
-            return (!isNaN(start) && !isNaN(end)) ? end - start : null;
-          }
-          const num = parseInt(ageBracket, 10);
-          return !isNaN(num) ? num : null;
-        })(),
+        ageBracket,
         integrations: integrations.filter(i => i.enabled).map(i => i.id),
     };
     console.log("submitted data:", userData);
+    setUserData(userData);
     //Send data to backend
     onComplete();
   }
@@ -82,18 +76,18 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       category: 'device',
     },
     {
-      id: 'typing',
-      name: 'Typing Behavior',
-      description: 'Analyze typing patterns and errors',
-      iconName: 'create',
-      enabled: false,
-      category: 'device',
-    },
-    {
       id: 'outdoor-brightness',
       name: 'Outdoor Brightness',
       description: 'Detect ambient light exposure',
       iconName: 'sunny',
+      enabled: true,
+      category: 'device',
+    },
+    {
+      id: 'usage-accuracy',
+      name: 'Usage Accuracy',
+      description: 'Track device interaction patterns',
+      iconName: 'analytics',
       enabled: true,
       category: 'device',
     },
@@ -126,12 +120,25 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   };
 
   const ageBrackets = [
-    '18-24',
-    '25-34',
-    '35-44',
-    '45-54',
-    '55-64',
-    '65+',
+    {
+        id: '18-24',
+        value: 21
+    },{
+        id: '25-34',
+        value: 29
+    },{
+        id: '35-44',
+        value: 39
+    },{
+        id: '45-54',
+        value: 49
+    },{
+        id: '55-64',
+        value: 59
+    },{
+        id: '65+',
+        value: 70
+    }
   ];
 
   const canProceedStep1 = name.trim() && ageBracket;
@@ -174,20 +181,20 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               <View style={styles.ageBracketGrid}>
                 {ageBrackets.map((bracket) => (
                   <Pressable
-                    key={bracket}
-                    onPress={() => setAgeBracket(bracket)}
+                    key={bracket.id}
+                    onPress={() => setAgeBracket(bracket.value.toString())}
                     style={[
                       styles.ageBracketButton,
-                      ageBracket === bracket && styles.ageBracketButtonSelected,
+                      ageBracket === bracket.value.toString() && styles.ageBracketButtonSelected,
                     ]}
                   >
                     <Text
                       style={[
                         styles.ageBracketText,
-                        ageBracket === bracket && styles.ageBracketTextSelected,
+                        ageBracket === bracket.id && styles.ageBracketTextSelected,
                       ]}
                     >
-                      {bracket}
+                      {bracket.id}
                     </Text>
                   </Pressable>
                 ))}
@@ -271,11 +278,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                       <Text style={styles.integrationName}>{integration.name}</Text>
                       <Text style={styles.integrationDescription}>{integration.description}</Text>
                     </View>
-                    {integration.enabled && (
-                      <View style={styles.checkmarkContainer}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
+  
                   </Pressable>
                 ))}
               </View>
@@ -313,11 +316,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                       <Text style={styles.integrationName}>{integration.name}</Text>
                       <Text style={styles.integrationDescription}>{integration.description}</Text>
                     </View>
-                    {integration.enabled && (
-                      <View style={[styles.checkmarkContainer, styles.checkmarkContainerBlue]}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
+     
                   </Pressable>
                 ))}
               </View>
@@ -355,11 +354,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                       <Text style={styles.integrationName}>{integration.name}</Text>
                       <Text style={styles.integrationDescription}>{integration.description}</Text>
                     </View>
-                    {integration.enabled && (
-                      <View style={[styles.checkmarkContainer, styles.checkmarkContainerPurple]}>
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      </View>
-                    )}
+
                   </Pressable>
                 ))}
               </View>
