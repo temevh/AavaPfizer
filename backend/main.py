@@ -32,12 +32,18 @@ from schemas import (
     BatchUpdateResponse,
     ClearSessionResponse,
     ChatRequest,
-    ChatResponse
+    ChatResponse,
+    PredictionWithIntegrations,
+    SavePredictionResponse,
+    IntegrationData
 )
 from config import settings
 
 # Gemini AI
 import google.generativeai as genai
+
+# BigQuery
+from google.cloud import bigquery
 
 # Configure logging
 logging.basicConfig(
@@ -67,6 +73,7 @@ model_manager: OnlineLearningManager = None
 scaler = None
 label_encoder = None
 update_counter = 0
+bigquery_client = None
 
 # Session storage for accumulated data
 session_data = []  # List of (features, label) tuples
@@ -128,6 +135,8 @@ def load_model():
 @app.on_event("startup")
 async def startup_event():
     """Initialize model on startup."""
+    global bigquery_client
+
     logger.info("="*60)
     logger.info("STARTING MIGRAINE CLASSIFIER API")
     logger.info("="*60)
@@ -139,6 +148,14 @@ async def startup_event():
         logger.info("✓ Gemini API configured")
     else:
         logger.warning("⚠ Gemini API key not configured")
+
+    # Initialize BigQuery
+    if settings.USE_BIGQUERY:
+        try:
+            bigquery_client = bigquery.Client()
+            logger.info("✓ BigQuery client initialized")
+        except Exception as e:
+            logger.warning(f"⚠ BigQuery initialization failed: {e}")
 
     logger.info("="*60)
     logger.info("✓ API READY")
@@ -425,6 +442,209 @@ async def get_metrics():
 
     metrics = model_manager.get_metrics()
     return MetricsResponse(**metrics)
+
+
+@app.post("/save_data")
+async def save_data(request: PredictionWithIntegrations):
+    """
+    Save prediction and integration data to BigQuery.
+
+    Args:
+        request: User data with prediction results and integrations
+
+    Returns:
+        Save status
+    """
+    if not settings.USE_BIGQUERY or not bigquery_client:
+        raise HTTPException(status_code=503, detail="BigQuery not configured")
+
+    try:
+        table_id = f"{bigquery_client.project}.{settings.BIGQUERY_DATASET}.{settings.BIGQUERY_TABLE}"
+
+        # Prepare row data
+        row = {
+            "user_id": request.user_id,
+            "name": request.name,
+            "age_bracket": request.age_bracket,
+            "timestamp": datetime.utcnow().isoformat(),
+            "session_id": request.session_id,
+            "prediction": request.prediction or "Unknown",
+            "confidence": request.confidence or 0.0,
+        }
+
+        # Add probabilities if provided
+        if request.all_probabilities:
+            row["all_probabilities"] = request.all_probabilities
+
+        # Add feature values
+        features_dict = request.features.dict()
+        for key in ["age", "duration", "frequency", "location", "character", "intensity",
+                   "nausea", "vomit", "phonophobia", "photophobia", "visual", "sensory",
+                   "dysphasia", "dysarthria", "vertigo", "tinnitus", "hypoacusis",
+                   "diplopia", "defect", "ataxia", "conscience", "paresthesia", "dpf"]:
+            row[key] = features_dict.get(key)
+
+        # Add integration data
+        if request.integrations:
+            integration_dict = request.integrations.dict()
+            for key, value in integration_dict.items():
+                if value is not None:
+                    row[key] = value
+
+        # Add integrations enabled
+        if request.integrations_enabled:
+            row["integrations_enabled"] = request.integrations_enabled
+
+        # Note: prediction and confidence should be added by the client after making prediction
+        # This endpoint just saves the data
+
+        # Insert row
+        errors = bigquery_client.insert_rows_json(table_id, [row])
+        if errors:
+            logger.error(f"BigQuery insert errors: {errors}")
+            raise HTTPException(status_code=500, detail=f"BigQuery insert failed: {errors}")
+
+        logger.info(f"✓ Saved data to BigQuery for user {request.user_id}")
+
+        return {"status": "success", "message": "Data saved to BigQuery"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Save data error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/analytics/{user_id}")
+async def get_analytics(user_id: str, days: int = 30):
+    """
+    Get sleep, time, and alcohol correlation analytics for dashboard.
+
+    Args:
+        user_id: User identifier
+        days: Number of days to analyze (default 30)
+
+    Returns:
+        Analytics data for dashboard visualization
+    """
+    if not settings.USE_BIGQUERY or not bigquery_client:
+        raise HTTPException(status_code=503, detail="BigQuery not configured")
+
+    try:
+        # Query for correlation data
+        query = f"""
+        WITH migraine_events AS (
+            SELECT
+                user_id,
+                timestamp,
+                prediction,
+                EXTRACT(HOUR FROM timestamp) as hour_of_day,
+                EXTRACT(DAYOFWEEK FROM timestamp) as day_of_week,
+                sleep_hours,
+                alcohol_units,
+                alcohol_hours_ago,
+                CASE
+                    WHEN prediction != 'No migraine' THEN 1
+                    ELSE 0
+                END as had_migraine
+            FROM `{bigquery_client.project}.{settings.BIGQUERY_DATASET}.{settings.BIGQUERY_TABLE}`
+            WHERE user_id = @user_id
+                AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
+        )
+        SELECT
+            -- Sleep correlation
+            AVG(CASE WHEN had_migraine = 1 THEN sleep_hours END) as avg_sleep_with_migraine,
+            AVG(CASE WHEN had_migraine = 0 THEN sleep_hours END) as avg_sleep_without_migraine,
+
+            -- Alcohol correlation
+            AVG(CASE WHEN had_migraine = 1 THEN alcohol_units END) as avg_alcohol_with_migraine,
+            AVG(CASE WHEN had_migraine = 0 THEN alcohol_units END) as avg_alcohol_without_migraine,
+
+            -- Time patterns
+            COUNTIF(had_migraine = 1 AND hour_of_day BETWEEN 0 AND 6) as migraines_night,
+            COUNTIF(had_migraine = 1 AND hour_of_day BETWEEN 6 AND 12) as migraines_morning,
+            COUNTIF(had_migraine = 1 AND hour_of_day BETWEEN 12 AND 18) as migraines_afternoon,
+            COUNTIF(had_migraine = 1 AND hour_of_day BETWEEN 18 AND 24) as migraines_evening,
+
+            -- Total counts
+            COUNTIF(had_migraine = 1) as total_migraines,
+            COUNT(*) as total_records
+        FROM migraine_events
+        """
+
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+                bigquery.ScalarQueryParameter("days", "INT64", days),
+            ]
+        )
+
+        query_job = bigquery_client.query(query, job_config=job_config)
+        results = list(query_job.result())
+
+        if not results:
+            return {
+                "user_id": user_id,
+                "days_analyzed": days,
+                "message": "No data found"
+            }
+
+        row = results[0]
+
+        # Get time series data for charts
+        time_series_query = f"""
+        SELECT
+            DATE(timestamp) as date,
+            COUNTIF(prediction != 'No migraine') as migraine_count,
+            AVG(sleep_hours) as avg_sleep,
+            AVG(alcohol_units) as avg_alcohol
+        FROM `{bigquery_client.project}.{settings.BIGQUERY_DATASET}.{settings.BIGQUERY_TABLE}`
+        WHERE user_id = @user_id
+            AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY)
+        GROUP BY date
+        ORDER BY date
+        """
+
+        time_job = bigquery_client.query(time_series_query, job_config=job_config)
+        time_results = list(time_job.result())
+
+        time_series = [
+            {
+                "date": str(r.date),
+                "migraine_count": r.migraine_count,
+                "avg_sleep": float(r.avg_sleep) if r.avg_sleep else None,
+                "avg_alcohol": float(r.avg_alcohol) if r.avg_alcohol else None,
+            }
+            for r in time_results
+        ]
+
+        return {
+            "user_id": user_id,
+            "days_analyzed": days,
+            "sleep_correlation": {
+                "avg_sleep_with_migraine": float(row.avg_sleep_with_migraine) if row.avg_sleep_with_migraine else None,
+                "avg_sleep_without_migraine": float(row.avg_sleep_without_migraine) if row.avg_sleep_without_migraine else None,
+            },
+            "alcohol_correlation": {
+                "avg_alcohol_with_migraine": float(row.avg_alcohol_with_migraine) if row.avg_alcohol_with_migraine else None,
+                "avg_alcohol_without_migraine": float(row.avg_alcohol_without_migraine) if row.avg_alcohol_without_migraine else None,
+            },
+            "time_patterns": {
+                "night": row.migraines_night,
+                "morning": row.migraines_morning,
+                "afternoon": row.migraines_afternoon,
+                "evening": row.migraines_evening,
+            },
+            "summary": {
+                "total_migraines": row.total_migraines,
+                "total_records": row.total_records,
+            },
+            "time_series": time_series
+        }
+
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/chat", response_model=ChatResponse)

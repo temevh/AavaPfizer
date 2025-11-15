@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Gemini API settings
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
+    # BigQuery settings
+    USE_BIGQUERY: bool = os.getenv("USE_BIGQUERY", "true").lower() == "true"
+    BIGQUERY_DATASET: str = os.getenv("BIGQUERY_DATASET", "migraine_data")
+    BIGQUERY_TABLE: str = os.getenv("BIGQUERY_TABLE", "predictions")
+
     class Config:
         env_file = ".env"
         case_sensitive = True

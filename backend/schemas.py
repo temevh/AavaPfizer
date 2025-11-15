@@ -244,3 +244,47 @@ class ChatResponse(BaseModel):
 
     response: str = Field(..., description="Gemini's response")
     timestamp: str = Field(..., description="Response timestamp")
+
+
+class IntegrationData(BaseModel):
+    """Health and environmental integration data."""
+
+    sleep_hours: Optional[float] = Field(None, description="Sleep duration in hours")
+    sleep_quality: Optional[str] = Field(None, description="Sleep quality rating")
+    alcohol_units: Optional[float] = Field(None, description="Alcohol consumption in units")
+    alcohol_hours_ago: Optional[float] = Field(None, description="Hours since last alcohol")
+    steps: Optional[int] = Field(None, description="Step count")
+    heart_rate: Optional[int] = Field(None, description="Heart rate BPM")
+    screen_time_minutes: Optional[int] = Field(None, description="Screen time in minutes")
+    screen_brightness: Optional[float] = Field(None, description="Screen brightness (0-1)")
+    outdoor_brightness: Optional[float] = Field(None, description="Outdoor brightness lux")
+    weather: Optional[str] = Field(None, description="Weather conditions")
+    temperature: Optional[float] = Field(None, description="Temperature in Celsius")
+    barometric_pressure: Optional[float] = Field(None, description="Barometric pressure hPa")
+
+
+class PredictionWithIntegrations(BaseModel):
+    """Prediction request with integration data for BigQuery."""
+
+    user_id: str = Field(..., description="User identifier")
+    name: Optional[str] = Field(None, description="User name")
+    age_bracket: Optional[int] = Field(None, description="User age bracket")
+    session_id: Optional[str] = Field(None, description="Session identifier")
+
+    # Prediction results (from /predict endpoint)
+    prediction: Optional[str] = Field(None, description="Predicted migraine type")
+    confidence: Optional[float] = Field(None, description="Prediction confidence")
+    all_probabilities: Optional[dict] = Field(None, description="All class probabilities")
+
+    features: MigraineFeatures
+    integrations: Optional[IntegrationData] = Field(None, description="Integration data")
+    integrations_enabled: Optional[List[str]] = Field(None, description="List of enabled integrations")
+
+
+class SavePredictionResponse(BaseModel):
+    """Response from save prediction endpoint."""
+
+    status: str = Field(..., description="Save status")
+    bigquery_saved: bool = Field(..., description="Whether saved to BigQuery")
+    prediction: str = Field(..., description="Prediction result")
+    confidence: float = Field(..., description="Prediction confidence")
