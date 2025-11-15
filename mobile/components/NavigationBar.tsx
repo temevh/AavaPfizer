@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     fontWeight: '500',
+    paddingHorizontal: 12,
   },
   headerSubtitleDark: {
     color: '#94a3b8',

@@ -31,7 +31,6 @@ const durationOptions = [
   { label: '4-8 hours', value: '4-8 hours' },
   { label: '8-24 hours', value: '8-24 hours' },
   { label: 'More than 24 hours', value: '> 24 hours' },
-  { label: 'Still ongoing', value: 'ongoing' },
 ];
 
 export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenProps) {
@@ -42,6 +41,7 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
+  const [enableAIAnalysis, setEnableAIAnalysis] = useState(false);
   const { darkMode } = useTheme();
 
   const symptoms = [
@@ -65,13 +65,18 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
 
   const handleSubmit = () => {
     setShowSuccess(true);
-    const data = {
-      intensity: intensity,
-      symptoms: selectedSymptoms,
-      duration: duration,
-      notes: notes,
+    
+    if (enableAIAnalysis) {
+      const data = {
+        intensity: intensity,
+        symptoms: selectedSymptoms,
+        duration: duration,
+        notes: notes,
+      }
+      console.log('Migraine Log Submitted:', data);
+      // Send data to backend/CNN for analysis
     }
-    console.log('Migraine Log Submitted:', data);
+    
     setTimeout(() => {
       navigation.navigate('Main');
     }, 1500);
@@ -97,7 +102,7 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
     <View style={[styles.container, darkMode && styles.containerDark]}>
       <NavigationBar
         title="Log Migraine"
-        subtitle="Quick and simple"
+        subtitle="Logging your migraines helps our AI detect patterns and provide better insights"
         showBackButton={true}
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -197,6 +202,29 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
                 textAlignVertical="top"
               />
           </View>
+
+          {/* AI Analysis Checkbox */}
+          <Pressable
+            onPress={() => setEnableAIAnalysis(!enableAIAnalysis)}
+            style={[
+              styles.checkboxContainer,
+              darkMode && styles.sectionDark,
+            ]}
+          >
+            <View style={[
+              styles.checkbox,
+              enableAIAnalysis && styles.checkboxChecked,
+              darkMode && styles.checkboxDark,
+              enableAIAnalysis && darkMode && styles.checkboxCheckedDark,
+            ]}>
+              {enableAIAnalysis && (
+                <Ionicons name="checkmark" size={20} color="#fff" />
+              )}
+            </View>
+            <Text style={[styles.checkboxLabel, darkMode && styles.textDark]}>
+              Enable AI pattern analysis
+            </Text>
+          </Pressable>
 
           {/* Submit Button */}
           <Pressable
@@ -454,6 +482,44 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f172a',
     borderColor: '#475569',
     color: '#e2e8f0',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#475569',
+  },
+  checkboxChecked: {
+    backgroundColor: '#7e22ce',
+    borderColor: '#7e22ce',
+  },
+  checkboxCheckedDark: {
+    backgroundColor: '#9333ea',
+    borderColor: '#9333ea',
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: '#334155',
+    fontWeight: '500',
   },
   submitButton: {
     borderRadius: 16,
