@@ -26,15 +26,29 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     const selectedBracket = ageBrackets.find(b => b.id === ageBracket);
     const selectedIntegrations = integrations.filter(i => i.enabled).map(i => i.id);
 
+    // Create userData with realistic mock initial values for dashboard
+    const today = new Date().toISOString().split('T')[0];
     const userData = {
         name,
         ageBracket,
         integrations: selectedIntegrations,
         dashboardData: selectedIntegrations.length > 0 ? {
-          date: new Date().toISOString().split('T')[0],
-          meals: null,
-          hydration: null,
-          alcohol: null,
+          date: today,
+          // Manual metrics - initialized with realistic values
+          meals: { value: 0.6, status: 'Good' as const, unit: '3 meals today' },
+          hydration: { value: 0.6, status: 'Good' as const, unit: '6 glasses' },
+          alcohol: { value: 1.0, status: 'Excellent' as const, unit: 'None today' },
+          // Device metrics - initialized with realistic values
+          steps: { value: 0.52, status: 'Fair' as const, unit: '5,240 steps' },
+          outdoorBrightness: { value: 0.6, status: 'Good' as const, unit: 'Moderate' },
+          sleep: { value: 0.75, status: 'Good' as const, unit: '7.5 hours' },
+          usageAccuracy: { value: 0.85, status: 'Excellent' as const, unit: 'Low typos' },
+          screenBrightness: { value: 0.5, status: 'Fair' as const, unit: '75% avg' },
+          screenTime: { value: 0.3, status: 'Poor' as const, unit: '8.5 hours' },
+          heartRate: { value: 0.8, status: 'Excellent' as const, unit: '68 bpm avg' },
+          // External metrics - initialized with realistic values
+          calendar: { value: 0.4, status: 'Fair' as const, unit: '8 meetings' },
+          weather: { value: 0.6, status: 'Good' as const, unit: 'Stable pressure' },
           hasManualData: false
         } : null
     };

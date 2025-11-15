@@ -24,6 +24,15 @@ export default function HomeScreen() {
     router.push('/pattern-warnings');
   };
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
+  // Show onboarding screen if user hasn't completed setup
+  if (!userData?.integrations) {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  }
+
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
       <NavigationBar
@@ -57,26 +66,12 @@ export default function HomeScreen() {
           maxItems={2}
           style={styles.warningsContainer}
         />
-
-        {/* Onboarding Button */}
-        {!userData?.integrations && (
-          <Pressable
-          onPress={() => setShowOnboarding(true)}
-          style={({ pressed }) => [
-            styles.onboardingButton,
-            pressed && styles.onboardingButtonPressed,
-          ]}
-          >
-          <Ionicons name="settings-outline" size={24} color="#9333ea" />
-          <Text style={[styles.onboardingButtonText, darkMode && styles.onboardingButtonTextDark]}>Setup & Preferences</Text>
-        </Pressable>
-        )}
       </View>
     </ScrollView>
     
     <FloatingMenu />
 
-    {/* Onboarding Modal */}
+    {/* Onboarding Modal for re-running setup */}
     <Modal
       visible={showOnboarding}
       animationType="slide"

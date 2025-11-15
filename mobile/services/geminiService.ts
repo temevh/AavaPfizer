@@ -16,7 +16,7 @@ export async function generateMigraineInsights(
   confidence: number,
   dashboardData: any
 ): Promise<string> {
-  const systemPrompt = `You are a helpful migraine assistant. Provide brief, actionable insights based on the user's migraine log. Keep response under 100 words and be empathetic. Focus on immediate relief and prevention strategies. Only respond with the insights.
+  const systemPrompt = `You are a helpful migraine assistant. Provide brief, actionable insights based on the user's migraine log. Keep response under 100 words and be empathetic. Focus on immediate relief and prevention strategies. Only respond with the insights and nothing else.
   
   `;
 
@@ -46,7 +46,7 @@ External Sources:
 - Calendar Stress: ${dashboardData?.calendar?.unit || 'Unknown'} (${dashboardData?.calendar?.status || 'Unknown'})
 - Weather Conditions: ${dashboardData?.weather?.unit || 'Unknown'} (${dashboardData?.weather?.status || 'Unknown'})
 
-Analyze these comprehensive metrics and give me 2-3 brief, personalized tips based on what might have contributed to this migraine and how to prevent the next one. Do not add bolding to the text.`;
+Analyze these comprehensive metrics and give me 2-3 brief, personalized tips based on what might have contributed to this migraine and how to prevent the next one. Do not add bolding to the text. Return the tips in a list format with a line break between each item.`;
 
   const response = await chat({ message: userMessage, system_prompt: systemPrompt });
   return response.response;
@@ -56,7 +56,7 @@ Analyze these comprehensive metrics and give me 2-3 brief, personalized tips bas
  * Generate dashboard health insights
  */
 export async function generateDashboardInsights(dashboardData: any): Promise<string> {
-  const systemPrompt = `You are a health insights assistant. Analyze the user's daily health metrics and provide 2-3 key insights or recommendations. Keep response under 120 words. Focus on migraine prevention.`;
+  const systemPrompt = `You are a health insights assistant. Analyze the user's daily health metrics and provide 2-3 key insights or recommendations. Keep response under 120 words. Focus on migraine prevention. Only show the ingsihts and nothing else. Do not add bolding. Give the insights in a list format with a line break between each item. `;
 
   const userMessage = `Here are my health metrics for today:
 - Sleep: ${dashboardData?.sleep?.unit || 'Unknown'} (${dashboardData?.sleep?.status || 'Unknown'})
