@@ -122,21 +122,9 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
             ? editingEntry.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
             : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
           }
-          showBackButton={false}
+          showBackButton={true}
+          onBackPress={handleCancel}
         />
-        <View style={styles.addHeader}>
-          <Pressable
-            onPress={handleCancel}
-            style={({ pressed }) => [
-              styles.cancelButton,
-              darkMode && styles.cancelButtonDark,
-              pressed && styles.cancelButtonPressed,
-            ]}
-          >
-            <Ionicons name="close" size={20} color={darkMode ? '#e2e8f0' : '#1e293b'} />
-            <Text style={[styles.backText, darkMode && styles.backTextDark]}>Cancel</Text>
-          </Pressable>
-        </View>
 
         <View style={[styles.content, { maxWidth }]}>
           <TextInput

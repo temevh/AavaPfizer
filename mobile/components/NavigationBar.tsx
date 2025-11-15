@@ -9,6 +9,7 @@ interface NavigationBarProps {
   title?: string;
   subtitle?: string;
   showBackButton?: boolean;
+  onBackPress?: () => void;
 }
 
 const { width } = Dimensions.get('window');
@@ -18,10 +19,19 @@ export function NavigationBar({
   title, 
   subtitle, 
   showBackButton = true,
+  onBackPress,
 }: NavigationBarProps) {
   const router = useRouter();
   const { darkMode, toggleDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <View style={[styles.header, darkMode && styles.headerDark, { paddingTop: insets.top }]}>
@@ -29,7 +39,7 @@ export function NavigationBar({
         <View style={styles.headerTop}>
           {showBackButton ? (
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleBackPress}
               style={({ pressed }) => [
                 styles.backButton,
                 darkMode && styles.backButtonDark,
