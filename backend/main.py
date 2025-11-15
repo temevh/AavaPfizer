@@ -618,28 +618,105 @@ async def get_analytics(user_id: str, days: int = 30):
             for r in time_results
         ]
 
+        # Format data for React Native charts
+        sleep_with = float(row.avg_sleep_with_migraine) if row.avg_sleep_with_migraine else 0
+        sleep_without = float(row.avg_sleep_without_migraine) if row.avg_sleep_without_migraine else 0
+        alcohol_with = float(row.avg_alcohol_with_migraine) if row.avg_alcohol_with_migraine else 0
+        alcohol_without = float(row.avg_alcohol_without_migraine) if row.avg_alcohol_without_migraine else 0
+
         return {
             "user_id": user_id,
             "days_analyzed": days,
-            "sleep_correlation": {
-                "avg_sleep_with_migraine": float(row.avg_sleep_with_migraine) if row.avg_sleep_with_migraine else None,
-                "avg_sleep_without_migraine": float(row.avg_sleep_without_migraine) if row.avg_sleep_without_migraine else None,
-            },
-            "alcohol_correlation": {
-                "avg_alcohol_with_migraine": float(row.avg_alcohol_with_migraine) if row.avg_alcohol_with_migraine else None,
-                "avg_alcohol_without_migraine": float(row.avg_alcohol_without_migraine) if row.avg_alcohol_without_migraine else None,
-            },
-            "time_patterns": {
-                "night": row.migraines_night,
-                "morning": row.migraines_morning,
-                "afternoon": row.migraines_afternoon,
-                "evening": row.migraines_evening,
-            },
+
+            # Summary cards/widgets
             "summary": {
                 "total_migraines": row.total_migraines,
                 "total_records": row.total_records,
+                "migraine_rate": round((row.total_migraines / row.total_records * 100), 1) if row.total_records > 0 else 0,
             },
-            "time_series": time_series
+
+            # Bar chart: Sleep comparison (Victory Native / Chart Kit format)
+            "sleep_chart": {
+                "type": "bar",
+                "data": [
+                    {"x": "With Migraine", "y": round(sleep_with, 1), "label": f"{round(sleep_with, 1)}h"},
+                    {"x": "Without Migraine", "y": round(sleep_without, 1), "label": f"{round(sleep_without, 1)}h"}
+                ],
+                "labels": ["With Migraine", "Without Migraine"],
+                "values": [round(sleep_with, 1), round(sleep_without, 1)],
+                "title": "Average Sleep Hours",
+                "yAxisLabel": "Hours",
+                "insight": f"You sleep {round(abs(sleep_with - sleep_without), 1)}h {'less' if sleep_with < sleep_without else 'more'} on migraine days"
+            },
+
+            # Bar chart: Alcohol comparison
+            "alcohol_chart": {
+                "type": "bar",
+                "data": [
+                    {"x": "With Migraine", "y": round(alcohol_with, 1), "label": f"{round(alcohol_with, 1)}"},
+                    {"x": "Without Migraine", "y": round(alcohol_without, 1), "label": f"{round(alcohol_without, 1)}"}
+                ],
+                "labels": ["With Migraine", "Without Migraine"],
+                "values": [round(alcohol_with, 1), round(alcohol_without, 1)],
+                "title": "Average Alcohol Units",
+                "yAxisLabel": "Units",
+                "insight": f"{'Higher' if alcohol_with > alcohol_without else 'Lower'} alcohol consumption on migraine days"
+            },
+
+            # Pie/Donut chart: Time patterns
+            "time_patterns_chart": {
+                "type": "pie",
+                "data": [
+                    {"name": "Night (0-6)", "value": row.migraines_night, "color": "#4A5568", "legendFontColor": "#7F7F7F"},
+                    {"name": "Morning (6-12)", "value": row.migraines_morning, "color": "#F6AD55", "legendFontColor": "#7F7F7F"},
+                    {"name": "Afternoon (12-18)", "value": row.migraines_afternoon, "color": "#FC8181", "legendFontColor": "#7F7F7F"},
+                    {"name": "Evening (18-24)", "value": row.migraines_evening, "color": "#9F7AEA", "legendFontColor": "#7F7F7F"}
+                ],
+                "title": "When Migraines Occur",
+                "total": row.total_migraines
+            },
+
+            # Line chart: Time series
+            "timeline_chart": {
+                "type": "line",
+                "data": {
+                    "labels": [r["date"] for r in time_series],
+                    "datasets": [
+                        {
+                            "label": "Migraine Count",
+                            "data": [r["migraine_count"] for r in time_series],
+                            "color": "#FC8181",
+                            "strokeWidth": 2
+                        },
+                        {
+                            "label": "Sleep Hours",
+                            "data": [r["avg_sleep"] if r["avg_sleep"] else 0 for r in time_series],
+                            "color": "#4299E1",
+                            "strokeWidth": 2
+                        }
+                    ]
+                },
+                "title": "Migraine & Sleep Trend"
+            },
+
+            # Raw data for custom visualization
+            "raw_data": {
+                "sleep_correlation": {
+                    "with_migraine": sleep_with,
+                    "without_migraine": sleep_without,
+                },
+                "alcohol_correlation": {
+                    "with_migraine": alcohol_with,
+                    "without_migraine": alcohol_without,
+                },
+                "time_patterns": {
+                    "night": row.migraines_night,
+                    "morning": row.migraines_morning,
+                    "afternoon": row.migraines_afternoon,
+                    "evening": row.migraines_evening,
+                },
+                "time_series": time_series
+            }
         }
 
     except Exception as e:
