@@ -24,7 +24,7 @@ interface MigraineTrackingScreenProps {
 }
 
 const { width } = Dimensions.get('window');
-const maxWidth = Math.min(width - 48, 448);
+const maxWidth = Math.min(width, 448);
 
 const durationOptions = [
   { label: 'Select duration', value: '' },
@@ -44,6 +44,8 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
 
   const symptoms = [
     'Aura',
@@ -88,30 +90,72 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const selectedDurationLabel = durationOptions.find(opt => opt.value === duration)?.label || 'Select duration';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, darkMode && styles.headerDark]}>
           <View style={[styles.headerContent, { maxWidth }]}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color="#475569" />
-              <Text style={styles.backText}>Back</Text>
-            </Pressable>
-            <Text style={styles.headerTitle}>Log Migraine</Text>
-            <Text style={styles.headerSubtitle}>Track your migraine episode</Text>
-          </View>
+            <View style={styles.headerTop}>
+              <Pressable
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <Ionicons name="arrow-back" size={24} color={darkMode ? '#94a3b8' : '#475569'} />
+                <Text style={[styles.backText, darkMode && styles.textDark]}>Back</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setDarkMode(!darkMode)}
+                style={styles.darkModeButton}
+              >
+                <Ionicons 
+                  name={darkMode ? 'sunny' : 'moon'} 
+                  size={24} 
+                  color={darkMode ? '#fbbf24' : '#475569'} 
+                />
+                <Text style={[styles.darkModeText, darkMode && styles.textDark]}>
+                  {darkMode ? 'Light' : 'Dark'}
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.headerTitle, darkMode && styles.textDark]}>Log Migraine</Text>
+            <Text style={[styles.headerSubtitle, darkMode && styles.textDark]}>Quick and simple</Text>
+          </View> 
         </View>
 
         
         <View style={[styles.content, { maxWidth }]}>
-          
+          {/* Quick Intensity */}
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.label, darkMode && styles.textDark]}>Pain Level</Text>
+            <View style={styles.intensityQuick}>
+              {[1, 2, 3, 4, 5].map((level) => (
+                <Pressable
+                  key={level}
+                  onPress={() => setIntensity(level)}
+                  style={[
+                    styles.intensityButton,
+                    intensity === level && styles.intensityButtonSelected,
+                    darkMode && styles.intensityButtonDark,
+                    intensity === level && darkMode && styles.intensityButtonSelectedDark,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.intensityButtonText,
+                      intensity === level && styles.intensityButtonTextSelected,
+                      darkMode && styles.textDark,
+                    ]}
+                  >
+                    {level}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
 
           {/* Symptoms */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Symptoms</Text>
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.label, darkMode && styles.textDark]}>Symptoms (optional)</Text>
             <View style={styles.symptomsGrid}>
               {symptoms.map((symptom) => {
                 const isSelected = selectedSymptoms.includes(symptom);
@@ -122,12 +166,15 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
                     style={[
                       styles.symptomButton,
                       isSelected && styles.symptomButtonSelected,
+                      darkMode && styles.symptomButtonDark,
+                      isSelected && darkMode && styles.symptomButtonSelectedDark,
                     ]}
                   >
                     <Text
                       style={[
                         styles.symptomText,
                         isSelected && styles.symptomTextSelected,
+                        darkMode && styles.textDark,
                       ]}
                     >
                       {symptom}
@@ -139,40 +186,58 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
           </View>
 
           {/* Duration */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Duration</Text>
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.label, darkMode && styles.textDark]}>Duration (optional)</Text>
             <Pressable
               onPress={() => setShowDurationModal(true)}
-              style={styles.durationButton}
+              style={[styles.durationButton, darkMode && styles.durationButtonDark]}
             >
-              <Text style={[styles.durationText, !duration && styles.durationPlaceholder]}>
+              <Text style={[styles.durationText, !duration && styles.durationPlaceholder, darkMode && styles.textDark]}>
                 {selectedDurationLabel}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#64748b" />
+              <Ionicons name="chevron-down" size={24} color={darkMode ? '#94a3b8' : '#64748b'} />
             </Pressable>
           </View>
 
           {/* Notes */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Additional Notes</Text>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Any other details..."
-              placeholderTextColor="#94a3b8"
-              multiline
-              numberOfLines={4}
-              value={notes}
-              onChangeText={setNotes}
-              textAlignVertical="top"
-            />
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Pressable
+              onPress={() => setShowNotes(!showNotes)}
+              style={styles.notesHeader}
+            >
+              <Text style={[styles.label, darkMode && styles.textDark]}>Notes (optional)</Text>
+              <Ionicons 
+                name={showNotes ? 'chevron-up' : 'chevron-down'} 
+                size={24} 
+                color={darkMode ? '#94a3b8' : '#64748b'} 
+              />
+            </Pressable>
+            {showNotes && (
+              <TextInput
+                style={[styles.notesInput, darkMode && styles.notesInputDark]}
+                placeholder="Any other details..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                numberOfLines={4}
+                value={notes}
+                onChangeText={setNotes}
+                textAlignVertical="top"
+              />
+            )}
           </View>
 
           {/* Submit Button */}
           <Pressable
             onPress={handleSubmit}
-            style={styles.submitButton}
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed && styles.submitButtonPressed,
+            ]}
           >
-              <Text style={styles.submitText}>Save Migraine Log</Text>
+            <View style={styles.submitButtonContent}>
+              <Ionicons name="checkmark-circle" size={28} color="#fff" />
+              <Text style={styles.submitText}>Save Log</Text>
+            </View>
           </Pressable>
         </View>
       </ScrollView>
@@ -231,6 +296,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
   scrollView: {
     flex: 1,
   },
@@ -243,29 +311,52 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f1f5f9',
     paddingTop: 8,
   },
+  headerDark: {
+    backgroundColor: '#1e293b',
+    borderBottomColor: '#334155',
+  },
   headerContent: {
     width: '100%',
     alignSelf: 'center',
-    padding: 24,
+    padding: 16,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
+    padding: 4,
+    minWidth: 70,
+    minHeight: 40,
   },
   backText: {
     fontSize: 16,
     color: '#475569',
   },
+  darkModeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 4,
+    minHeight: 40,
+  },
+  darkModeText: {
+    fontSize: 16,
+    color: '#475569',
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '500',
     color: '#1e293b',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#64748b',
   },
   content: {
@@ -286,14 +377,56 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  sectionDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
   label: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: '500',
     color: '#334155',
     marginBottom: 16,
   },
+  textDark: {
+    color: '#e2e8f0',
+  },
+  intensityQuick: {
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'space-between',
+  },
+  intensityButton: {
+    flex: 1,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  intensityButtonDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#475569',
+  },
+  intensityButtonSelected: {
+    backgroundColor: '#9333ea',
+    borderColor: '#9333ea',
+  },
+  intensityButtonSelectedDark: {
+    backgroundColor: '#7e22ce',
+    borderColor: '#7e22ce',
+  },
+  intensityButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  intensityButtonTextSelected: {
+    color: '#fff',
+  },
   intensityContainer: {
-    gap: 16,
+    gap: 12,
   },
   slider: {
     width: '100%',
@@ -329,20 +462,31 @@ const styles = StyleSheet.create({
   symptomButton: {
     flex: 1,
     minWidth: '45%',
-    padding: 12,
+    padding: 16,
+    minHeight: 56,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#e2e8f0',
+    borderColor: '#9bb9e0ff',
     backgroundColor: '#fff',
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  symptomButtonDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#475569',
   },
   symptomButtonSelected: {
     borderColor: '#9333ea',
     backgroundColor: '#faf5ff',
   },
+  symptomButtonSelectedDark: {
+    borderColor: '#7e22ce',
+    backgroundColor: '#7e22ce',
+  },
   symptomText: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 20,
+    fontWeight: '400',
+    color: '#000000ff',
   },
   symptomTextSelected: {
     color: '#7e22ce',
@@ -352,46 +496,78 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
+    padding: 16,
+    minHeight: 56,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: '#e2e8f0',
     backgroundColor: '#fff',
   },
+  durationButtonDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#475569',
+  },
   durationText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#334155',
   },
   durationPlaceholder: {
     color: '#94a3b8',
   },
+  notesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   notesInput: {
-    padding: 12,
+    padding: 16,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: '#e2e8f0',
     backgroundColor: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     color: '#334155',
-    minHeight: 100,
+    minHeight: 120,
+  },
+  notesInputDark: {
+    backgroundColor: '#0f172a',
+    borderColor: '#475569',
+    color: '#e2e8f0',
   },
   submitButton: {
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: '#7e22ce',
+    shadowColor: '#7e22ce',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  submitButtonPressed: {
+    transform: [{ scale: 0.98 }],
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 3,
+  },
+  submitButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 20,
+    minHeight: 64,
   },
   submitGradient: {
     padding: 16,
     alignItems: 'center',
   },
   submitText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#fff',
+    letterSpacing: 0.5,
   },
   successContainer: {
     flex: 1,
