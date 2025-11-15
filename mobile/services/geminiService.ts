@@ -26,15 +26,27 @@ export async function generateMigraineInsights(
 - Duration: ${duration}
 - AI predicted: ${prediction} (${Math.round(confidence * 100)}% confident)
 
-Recent health data:
-- Sleep: ${dashboardData?.sleep?.unit || 'Unknown'}
-- Hydration: ${dashboardData?.hydration?.unit || 'Unknown'}
-- Screen time: ${dashboardData?.screenTime?.unit || 'Unknown'}
-- Stress level: ${dashboardData?.calendar?.status || 'Unknown'}
-- Alcohol: ${dashboardData?.alcohol?.unit || 'Unknown'}
+Today's complete health profile:
 
+Manual Tracking:
+- Meals: ${dashboardData?.meals?.unit || 'Unknown'} (${dashboardData?.meals?.status || 'Unknown'})
+- Hydration: ${dashboardData?.hydration?.unit || 'Unknown'} (${dashboardData?.hydration?.status || 'Unknown'})
+- Alcohol: ${dashboardData?.alcohol?.unit || 'Unknown'} (${dashboardData?.alcohol?.status || 'Unknown'})
 
-Give me 2-3 brief personalized tips to help right now.`;
+Device Metrics:
+- Steps: ${dashboardData?.steps?.unit || 'Unknown'} (${dashboardData?.steps?.status || 'Unknown'})
+- Sleep Quality: ${dashboardData?.sleep?.unit || 'Unknown'} (${dashboardData?.sleep?.status || 'Unknown'})
+- Screen Time: ${dashboardData?.screenTime?.unit || 'Unknown'} (${dashboardData?.screenTime?.status || 'Unknown'})
+- Screen Brightness: ${dashboardData?.screenBrightness?.unit || 'Unknown'} (${dashboardData?.screenBrightness?.status || 'Unknown'})
+- Outdoor Brightness: ${dashboardData?.outdoorBrightness?.unit || 'Unknown'} (${dashboardData?.outdoorBrightness?.status || 'Unknown'})
+- Usage Accuracy: ${dashboardData?.usageAccuracy?.unit || 'Unknown'} (${dashboardData?.usageAccuracy?.status || 'Unknown'})
+- Heart Rate: ${dashboardData?.heartRate?.unit || 'Unknown'} (${dashboardData?.heartRate?.status || 'Unknown'})
+
+External Sources:
+- Calendar Stress: ${dashboardData?.calendar?.unit || 'Unknown'} (${dashboardData?.calendar?.status || 'Unknown'})
+- Weather Conditions: ${dashboardData?.weather?.unit || 'Unknown'} (${dashboardData?.weather?.status || 'Unknown'})
+
+Analyze these comprehensive metrics and give me 2-3 brief, personalized tips based on what might have contributed to this migraine and how to prevent the next one.`;
 
   const response = await chat({ message: userMessage, system_prompt: systemPrompt });
   return response.response;
