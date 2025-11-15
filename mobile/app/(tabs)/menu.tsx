@@ -12,7 +12,6 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { icon: 'home', label: 'Home', route: '/', color: '#6366f1', bgColor: '#eef2ff' },
   { icon: 'pulse', label: 'Log Migraine', route: '/migraine', color: '#9333ea', bgColor: '#f3e8ff' },
   { icon: 'book', label: 'Diary', route: '/diary', color: '#2563eb', bgColor: '#dbeafe' },
   { icon: 'bar-chart', label: 'Dashboard', route: '/dashboard', color: '#10b981', bgColor: '#d1fae5' },
