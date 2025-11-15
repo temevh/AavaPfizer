@@ -30,9 +30,14 @@ from schemas import (
     AccumulateRequest,
     AccumulateResponse,
     BatchUpdateResponse,
-    ClearSessionResponse
+    ClearSessionResponse,
+    ChatRequest,
+    ChatResponse
 )
 from config import settings
+
+# Gemini AI
+import google.generativeai as genai
 
 # Configure logging
 logging.basicConfig(
@@ -127,6 +132,14 @@ async def startup_event():
     logger.info("STARTING MIGRAINE CLASSIFIER API")
     logger.info("="*60)
     load_model()
+
+    # Configure Gemini
+    if settings.GEMINI_API_KEY:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        logger.info("✓ Gemini API configured")
+    else:
+        logger.warning("⚠ Gemini API key not configured")
+
     logger.info("="*60)
     logger.info("✓ API READY")
     logger.info("="*60)
@@ -412,6 +425,45 @@ async def get_metrics():
 
     metrics = model_manager.get_metrics()
     return MetricsResponse(**metrics)
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_gemini(request: ChatRequest):
+    """
+    Chat with Gemini AI.
+
+    Args:
+        request: Chat request with message and optional system prompt
+
+    Returns:
+        Gemini's response
+    """
+    if not settings.GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini API key not configured")
+
+    try:
+        # Initialize the model (using gemini-2.5-flash for faster, cheaper responses)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+
+        # Prepare the prompt
+        if request.system_prompt:
+            full_prompt = f"{request.system_prompt}\n\nUser: {request.message}\n\nAssistant:"
+        else:
+            full_prompt = request.message
+
+        # Generate response
+        response = model.generate_content(full_prompt)
+
+        logger.info(f"Gemini chat - User: {request.message[:50]}... Response: {response.text[:50]}...")
+
+        return ChatResponse(
+            response=response.text,
+            timestamp=datetime.utcnow().isoformat()
+        )
+
+    except Exception as e:
+        logger.error(f"Gemini chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def save_model_to_gcs():

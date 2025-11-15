@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     MODEL_NUM_CLASSES: int = 8
     MODEL_DROPOUT: float = 0.3
 
+    # Gemini API settings
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
     class Config:
         env_file = ".env"
         case_sensitive = True
