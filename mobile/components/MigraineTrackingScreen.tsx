@@ -154,10 +154,10 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
       }
     }
     console.log('========================');
+  };
 
-    setTimeout(() => {
-      navigation.navigate('Main');
-    }, 1500);
+  const handleDismiss = () => {
+    navigation.navigate('Main');
   };
 
   if (showSuccess) {
@@ -169,19 +169,28 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.successContent}>
-            <View style={styles.successIconContainer}>
-              <Ionicons name="checkmark-circle" size={40} color="#10b981" />
-            </View>
-            <Text style={[styles.successTitle, darkMode && styles.textDark]}>Migraine Logged</Text>
-            <Text style={[styles.successSubtitle, darkMode && styles.successSubtitleDark]}>Data saved successfully</Text>
+
 
             {/* Loading AI Insights */}
             {loadingInsights && (
-              <View style={styles.insightsLoadingContainer}>
-                <ActivityIndicator size="large" color="#9333ea" />
-                <Text style={[styles.insightsLoadingText, darkMode && styles.successSubtitleDark]}>
-                  Generating AI insights...
+              <View style={[styles.insightsLoadingContainer, darkMode && styles.insightsLoadingContainerDark]}>
+                <View style={styles.loadingIconWrapper}>
+                  <View style={[styles.loadingIconBackground, darkMode && styles.loadingIconBackgroundDark]}>
+                    <Ionicons name="sparkles" size={32} color="#9333ea" />
+                  </View>
+
+                </View>
+                <Text style={[styles.insightsLoadingTitle, darkMode && styles.textDark]}>
+                  Analyzing Your Data
                 </Text>
+                <Text style={[styles.insightsLoadingText, darkMode && styles.successSubtitleDark]}>
+                  Our AI is generating personalized insights based on your migraine patterns...
+                </Text>
+                 <ActivityIndicator 
+                    size="large" 
+                    color="#9333ea" 
+                    style={styles.loadingSpinner}
+                  />
               </View>
             )}
 
@@ -216,6 +225,16 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
                   {aiInsights}
                 </Text>
               </View>
+            )}
+
+            {/* Dismiss Button - Show when not loading or when AI is disabled */}
+            {(!enableAIAnalysis || !loadingInsights) && (
+              <Pressable
+                onPress={handleDismiss}
+                style={[styles.dismissButton, darkMode && styles.dismissButtonDark]}
+              >
+                <Text style={styles.dismissButtonText}>Back to Dashboard</Text>
+              </Pressable>
             )}
           </View>
         </ScrollView>
@@ -727,14 +746,87 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   insightsLoadingContainer: {
+    width: '100%',
+    backgroundColor: '#faf5ff',
+    borderRadius: 20,
+    padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
-    gap: 12,
+    gap: 16,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  insightsLoadingContainerDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  loadingIconWrapper: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  loadingIconBackground: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#fff',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  loadingIconBackgroundDark: {
+    backgroundColor: '#0f172a',
+  },
+  loadingSpinner: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+  },
+  insightsLoadingTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
   },
   insightsLoadingText: {
     fontSize: 14,
     color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  loadingDotsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#9333ea',
+  },
+  loadingDot1: {
+    opacity: 0.4,
+  },
+  loadingDot2: {
+    opacity: 0.7,
+  },
+  loadingDot3: {
+    opacity: 1,
   },
   predictionCard: {
     width: '100%',
@@ -802,6 +894,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: '#64748b',
+  },
+  dismissButton: {
+    width: '100%',
+    backgroundColor: '#9333ea',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  dismissButtonDark: {
+    backgroundColor: '#7e22ce',
+  },
+  dismissButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,

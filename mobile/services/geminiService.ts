@@ -16,7 +16,9 @@ export async function generateMigraineInsights(
   confidence: number,
   dashboardData: any
 ): Promise<string> {
-  const systemPrompt = `You are a helpful migraine assistant. Provide brief, actionable insights based on the user's migraine log. Keep response under 100 words and be empathetic.`;
+  const systemPrompt = `You are a helpful migraine assistant. Provide brief, actionable insights based on the user's migraine log. Keep response under 100 words and be empathetic. Focus on immediate relief and prevention strategies. Only respond with the insights.
+  
+  `;
 
   const userMessage = `I just logged a migraine:
 - Symptoms: ${symptoms.join(', ')}
@@ -29,6 +31,8 @@ Recent health data:
 - Hydration: ${dashboardData?.hydration?.unit || 'Unknown'}
 - Screen time: ${dashboardData?.screenTime?.unit || 'Unknown'}
 - Stress level: ${dashboardData?.calendar?.status || 'Unknown'}
+- Alcohol: ${dashboardData?.alcohol?.unit || 'Unknown'}
+
 
 Give me 2-3 brief personalized tips to help right now.`;
 
