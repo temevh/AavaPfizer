@@ -20,7 +20,7 @@ interface DiaryEntriesScreenProps {
 }
 
 const { width } = Dimensions.get('window');
-const maxWidth = Math.min(width - 48, 448);
+const maxWidth = Math.min(width - 12, 448);
 
 interface DiaryEntry {
   id: string;
@@ -138,16 +138,6 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
         showBackButton={true}
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.diaryHeader}>
-          <Pressable
-            onPress={() => setShowAddEntry(true)}
-            style={styles.addButton}
-          >
-            <Ionicons name="add" size={24} color="#fff" />
-            <Text style={styles.addButtonText}>New Entry</Text>
-          </Pressable>
-        </View>
-
         <View style={[styles.content, { maxWidth }]}>
           {entries.length === 0 ? (
             <View style={styles.emptyState}>
@@ -176,6 +166,14 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
           )}
         </View>
       </ScrollView>
+      
+      {/* Floating Add Button */}
+      <Pressable
+        onPress={() => setShowAddEntry(true)}
+        style={styles.floatingButton}
+      >
+        <Ionicons name="add" size={32} color="#fff" />
+      </Pressable>
     </View>
   );
 }
@@ -215,25 +213,21 @@ const styles = StyleSheet.create({
   textDark: {
     color: '#e2e8f0',
   },
-  diaryHeader: {
-    padding: 16,
-    maxWidth: maxWidth,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  addButton: {
-    flexDirection: 'row',
+  floatingButton: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#2563eb',
-    borderRadius: 12,
-    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   content: {
     width: '100%',
