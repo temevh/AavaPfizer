@@ -54,12 +54,32 @@ export default function FloatingMenu() {
 
   const rotation = rotationAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '45deg'],
+    outputRange: ['0deg', '90deg'],
   });
 
   const backdropOpacity = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 0.5],
+  });
+
+  const menuIconOpacity = rotationAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0, 0],
+  });
+
+  const closeIconOpacity = rotationAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0, 1],
+  });
+
+  const menuIconRotation = rotationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '90deg'],
+  });
+
+  const closeIconRotation = rotationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-90deg', '0deg'],
   });
 
   return (
@@ -82,7 +102,7 @@ export default function FloatingMenu() {
       {menuItems.map((item, index) => {
         const itemAnimation = animation.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, -(menuItems.length - index) * 76],
+          outputRange: [0, -(menuItems.length - index) * 74],
         });
 
         const itemOpacity = animation.interpolate({
@@ -138,9 +158,25 @@ export default function FloatingMenu() {
             pressed && styles.fabPressed,
           ]}
         >
-          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-            <Ionicons name="add" size={32} color="#fff" />
-          </Animated.View>
+          <View style={{ position: 'relative', width: 32, height: 32 }}>
+            <Animated.View 
+              style={{ 
+                opacity: menuIconOpacity, 
+                position: 'absolute',
+                transform: [{ rotate: menuIconRotation }],
+              }}
+            >
+              <Ionicons name="menu" size={32} color="#fff" />
+            </Animated.View>
+            <Animated.View 
+              style={{ 
+                opacity: closeIconOpacity,
+                transform: [{ rotate: closeIconRotation }],
+              }}
+            >
+              <Ionicons name="close" size={32} color="#fff" />
+            </Animated.View>
+          </View>
         </Pressable>
       </View>
     </>
@@ -155,7 +191,7 @@ const styles = StyleSheet.create({
   },
   menuItemContainer: {
     position: 'absolute',
-    bottom: 96,
+    bottom: 60,
     right: 24,
     zIndex: 2,
   },
