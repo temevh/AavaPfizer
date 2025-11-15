@@ -1,6 +1,7 @@
 import { NavigationBar } from '@/components/NavigationBar';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { DashboardWarnings } from '@/components/DashboardWarnings';
+import { PatternWarnings } from '@/components/PatternWarnings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +34,10 @@ export default function HomeScreen() {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
+  const handleViewPatterns = () => {
+    router.push('/patterns');
+  };
+
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
       <NavigationBar
@@ -55,7 +60,7 @@ export default function HomeScreen() {
             pressed && styles.emergencyButtonPressed,
           ]}
         >
-          <Ionicons name="medical" size={48} color="#dc2626" style={styles.emergencyIcon} />
+          <Ionicons name="medical" size={40} color="#dc2626" style={styles.emergencyIcon} />
           <Text style={[styles.emergencyText, darkMode && styles.emergencyTextDark]}>Migraine Help</Text>
           <Text style={[styles.emergencySubtext, darkMode && styles.emergencySubtextDark]}>Press for immediate migraine relief tips</Text>
         </Pressable>
@@ -66,6 +71,14 @@ export default function HomeScreen() {
           maxItems={2}
           style={styles.warningsContainer}
         />
+
+        {/* Pattern Warnings */}
+        <PatternWarnings 
+          onPress={handleViewPatterns}
+          maxItems={2}
+          style={styles.warningsContainer}
+        />
+
       </View>
     </ScrollView>
     
@@ -96,7 +109,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 24,
-    paddingTop: 32,
+    paddingTop: 12,
   },
   content: {
     width: '100%',
@@ -104,20 +117,20 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
     marginTop: 0,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: '#334155',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   titleDark: {
     color: '#e2e8f0',
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: 16,
     color: '#64748b',
   },
   subtitleDark: {
@@ -128,16 +141,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#dc2626',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emergencyButtonDark: {
     backgroundColor: '#1e293b',
@@ -147,19 +160,19 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   emergencyIcon: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   emergencyText: {
-    fontSize: 24,
-    fontWeight: '500',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#dc2626',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   emergencyTextDark: {
     color: '#ef4444',
   },
   emergencySubtext: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#991b1b',
     textAlign: 'center',
     paddingHorizontal: 16,
@@ -168,7 +181,7 @@ const styles = StyleSheet.create({
     color: '#dc2626',
   },
   warningsContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   onboardingButton: {
     flexDirection: 'row',
