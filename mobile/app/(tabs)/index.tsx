@@ -3,28 +3,34 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
+import { NavigationBar } from '@/components/NavigationBar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { darkMode } = useTheme();
   
   const user = {
     name: "Alex"
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <NavigationBar
+        showBackButton={false}
+      />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         <View style={[styles.content, { maxWidth }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Hello {user.name}</Text>
-            <Text style={styles.subtitle}>How are we feeling today?</Text>
+            <Text style={[styles.title, darkMode && styles.titleDark]}>Hello {user.name}</Text>
+            <Text style={[styles.subtitle, darkMode && styles.subtitleDark]}>How are we feeling today?</Text>
           </View>
 
-        {/* Emergency Button */}
+          {/* Emergency Button */}
         <Pressable
           onPress={() => Alert.alert('Emergency Help', 'Emergency tips will be shown here')}
           style={({ pressed }) => [
@@ -49,6 +55,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
+  scrollView: {
+    flex: 1,
+  },
   contentContainer: {
     padding: 24,
     paddingTop: 32,
@@ -68,9 +80,15 @@ const styles = StyleSheet.create({
     color: '#334155',
     marginBottom: 8,
   },
+  titleDark: {
+    color: '#e2e8f0',
+  },
   subtitle: {
     fontSize: 20,
     color: '#64748b',
+  },
+  subtitleDark: {
+    color: '#94a3b8',
   },
   emergencyButton: {
     width: '100%',

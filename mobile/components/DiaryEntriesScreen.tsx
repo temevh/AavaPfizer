@@ -9,17 +9,14 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-
-type RootStackParamList = {
-  Diary: undefined;
-};
-
-type DiaryEntriesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Diary'>;
+import { NavigationBar } from './NavigationBar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface DiaryEntriesScreenProps {
-  navigation: DiaryEntriesScreenNavigationProp;
+  navigation: {
+    goBack: () => void;
+  };
 }
 
 const { width } = Dimensions.get('window');
@@ -34,6 +31,7 @@ interface DiaryEntry {
 export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newEntryContent, setNewEntryContent] = useState('');
+  const { darkMode } = useTheme();
   const [entries, setEntries] = useState<DiaryEntry[]>([
     {
       id: '3',
@@ -81,21 +79,20 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
 
   if (showAddEntry) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={[styles.headerContent, { maxWidth }]}>
-            <Pressable
-              onPress={() => setShowAddEntry(false)}
-              style={styles.backButton}
-            >
-              <Ionicons name="close" size={20} color="#475569" />
-              <Text style={styles.backText}>Cancel</Text>
-            </Pressable>
-            <Text style={styles.headerTitle}>New Diary Entry</Text>
-            <Text style={styles.headerSubtitle}>
-              {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-            </Text>
-          </View>
+      <View style={[styles.container, darkMode && styles.containerDark]}>
+        <NavigationBar
+          title="New Diary Entry"
+          subtitle={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          showBackButton={false}
+        />
+        <View style={styles.addHeader}>
+          <Pressable
+            onPress={() => setShowAddEntry(false)}
+            style={styles.cancelButton}
+          >
+            <Ionicons name="close" size={24} color={darkMode ? '#94a3b8' : '#475569'} />
+            <Text style={[styles.backText, darkMode && styles.backTextDark]}>Cancel</Text>
+          </Pressable>
         </View>
 
         <View style={[styles.content, { maxWidth }]}>
@@ -104,7 +101,7 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
             onChangeText={setNewEntryContent}
             placeholder="How are you feeling today? Any observations or notes..."
             placeholderTextColor="#94a3b8"
-            style={styles.textArea}
+            style={[styles.textArea, darkMode && styles.textAreaDark]}
             multiline
             numberOfLines={12}
             textAlignVertical="top"
@@ -134,36 +131,27 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <NavigationBar
+        title="Diary"
+        subtitle="Your personal journal"
+        showBackButton={true}
+      />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={[styles.headerContent, { maxWidth }]}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color="#475569" />
-              <Text style={styles.backText}>Back</Text>
-            </Pressable>
-            <View style={styles.headerRow}>
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.headerTitle}>Diary</Text>
-                <Text style={styles.headerSubtitle}>Your personal journal</Text>
-              </View>
-              <Pressable
-                onPress={() => setShowAddEntry(true)}
-                style={styles.addButton}
-              >
-                <Ionicons name="add" size={24} color="#fff" />
-              </Pressable>
-            </View>
-          </View>
+        <View style={styles.diaryHeader}>
+          <Pressable
+            onPress={() => setShowAddEntry(true)}
+            style={styles.addButton}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>New Entry</Text>
+          </Pressable>
         </View>
 
         <View style={[styles.content, { maxWidth }]}>
           {entries.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No diary entries yet</Text>
+              <Text style={[styles.emptyText, darkMode && styles.emptyTextDark]}>No diary entries yet</Text>
               <Pressable
                 onPress={() => setShowAddEntry(true)}
                 style={styles.emptyButton}
@@ -174,14 +162,14 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
           ) : (
             <View style={styles.entriesList}>
               {entries.map((entry) => (
-                <View key={entry.id} style={styles.entryCard}>
+                <View key={entry.id} style={[styles.entryCard, darkMode && styles.entryCardDark]}>
                   <View style={styles.entryHeader}>
-                    <Text style={styles.entryDate}>{formatDate(entry.date)}</Text>
+                    <Text style={[styles.entryDate, darkMode && styles.entryDateDark]}>{formatDate(entry.date)}</Text>
                     <Text style={styles.entryTime}>
                       {entry.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   </View>
-                  <Text style={styles.entryContent}>{entry.content}</Text>
+                  <Text style={[styles.entryContent, darkMode && styles.textDark]}>{entry.content}</Text>
                 </View>
               ))}
             </View>
@@ -197,58 +185,55 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,
   },
-  header: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingTop: 8,
-  },
-  headerContent: {
-    width: '100%',
+  addHeader: {
+    padding: 16,
+    maxWidth: maxWidth,
     alignSelf: 'center',
-    padding: 24,
+    width: '100%',
   },
-  backButton: {
+  cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
   },
   backText: {
     fontSize: 16,
     color: '#475569',
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  backTextDark: {
+    color: '#94a3b8',
   },
-  headerTextContainer: {
-    flex: 1,
+  textDark: {
+    color: '#e2e8f0',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#64748b',
+  diaryHeader: {
+    padding: 16,
+    maxWidth: maxWidth,
+    alignSelf: 'center',
+    width: '100%',
   },
   addButton: {
-    width: 48,
-    height: 48,
+    flexDirection: 'row',
     backgroundColor: '#2563eb',
     borderRadius: 12,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
   },
   content: {
     width: '100%',
@@ -266,6 +251,11 @@ const styles = StyleSheet.create({
     color: '#334155',
     minHeight: 300,
     marginBottom: 16,
+  },
+  textAreaDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+    color: '#e2e8f0',
   },
   saveButton: {
     width: '100%',
@@ -299,6 +289,9 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginBottom: 16,
   },
+  emptyTextDark: {
+    color: '#64748b',
+  },
   emptyButton: {
     paddingVertical: 8,
   },
@@ -322,6 +315,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  entryCardDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -332,6 +329,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#2563eb',
+  },
+  entryDateDark: {
+    color: '#60a5fa',
   },
   entryTime: {
     fontSize: 14,

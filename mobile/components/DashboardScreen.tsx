@@ -7,23 +7,11 @@ import {
   ScrollView,
   Dimensions,
   Modal,
-  Button
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NavigationBar } from './NavigationBar';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingScreen } from './OnboardingScreen';
-
-type RootStackParamList = {
-  Dashboard: undefined;
-  // add other routes here if needed, e.g.:
-  // OtherScreen?: { id: string };
-};
-
-type DashboardScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
-
-interface DashboardScreenProps {
-  navigation: DashboardScreenNavigationProp;
-}
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width, 448);
@@ -34,9 +22,16 @@ interface MetricProps {
   value: number; // value between 0 and 1
   unit?: string;
   editable?: boolean;
+  darkMode?: boolean;
 }
 
-function StatusIndicator({ value }: { value: number }) {
+interface DashboardScreenProps {
+  navigation: {
+    goBack: () => void;
+  };
+}
+
+function StatusIndicator({ value, darkMode }: { value: number; darkMode?: boolean }) {
   const getColor = () => {
     if (value >= 0.8) return '#10b981';
     if (value >= 0.6) return '#84cc16';
@@ -64,30 +59,30 @@ function StatusIndicator({ value }: { value: number }) {
             style={[
               styles.statusBar,
               {
-                backgroundColor: value >= threshold ? color : '#e2e8f0',
+                backgroundColor: value >= threshold ? color : (darkMode ? '#334155' : '#e2e8f0'),
               },
             ]}
           />
         ))}
       </View>
-      <Text style={styles.statusLabel}>{getLabel()}</Text>
+      <Text style={[styles.statusLabel, darkMode && styles.statusLabelDark]}>{getLabel()}</Text>
     </View>
   );
 }
 
-function MetricCard({ iconName, label, value, unit, editable = false }: MetricProps) {
+function MetricCard({ iconName, label, value, unit, editable = false, darkMode }: MetricProps) {
   return (
-    <View style={styles.metricCard}>
+    <View style={[styles.metricCard, darkMode && styles.metricCardDark]}>
       <View style={styles.metricHeader}>
-        <View style={styles.metricIconContainer}>
-          <Ionicons name={iconName} size={20} color="#475569" />
+        <View style={[styles.metricIconContainer, darkMode && styles.metricIconContainerDark]}>
+          <Ionicons name={iconName} size={20} color={darkMode ? '#94a3b8' : '#475569'} />
         </View>
         <View style={styles.metricTextContainer}>
-          <Text style={styles.metricLabel}>{label}</Text>
-          {unit && <Text style={styles.metricUnit}>{unit}</Text>}
+          <Text style={[styles.metricLabel, darkMode && styles.metricLabelDark]}>{label}</Text>
+          {unit && <Text style={[styles.metricUnit, darkMode && styles.metricUnitDark]}>{unit}</Text>}
         </View>
       </View>
-      <StatusIndicator value={value} />
+      <StatusIndicator value={value} darkMode={darkMode} />
     </View>
   );
 }
@@ -99,6 +94,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [mealsCount, setMealsCount] = useState(3);
   const [waterCount, setWaterCount] = useState(6);
   const [alcoholCount, setAlcoholCount] = useState(0);
+  const { darkMode } = useTheme();
 
   const handleEditMetric = (type: 'meals' | 'hydration' | 'alcohol') => {
     setTrackingType(type);
@@ -158,36 +154,18 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <NavigationBar
+        title="Dashboard"
+        subtitle="Your health metrics"
+        showBackButton={true}
+      />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={[styles.headerContent, { maxWidth }]}>
-            <View style={styles.headerTop}>
-              <Pressable
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-              >
-                <Ionicons name="arrow-back" size={20} color="#475569" />
-                <Text style={styles.backText}>Back</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setShowOnboarding(true)}
-                style={styles.settingsButton}
-              >
-                <Ionicons name="settings-outline" size={24} color="#475569" />
-              </Pressable>
-            </View>
-            <Text style={styles.headerTitle}>Dashboard</Text>
-            <Text style={styles.headerSubtitle}> health metrics</Text>
-          </View>
-        </View>
-
         <View style={[styles.content, { maxWidth }]}>
           {/* Manual Inputs */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Manual Tracking</Text>
-            <Text style={styles.sectionSubtitle}>Tap a metric to log your data</Text>
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Manual Tracking</Text>
+            <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Tap a metric to log your data</Text>
             <View style={styles.metricsList}>
               {manualMetrics.map((metric, index) => (
                 <Pressable
@@ -197,30 +175,30 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
                     metric.label === 'Hydration' ? 'hydration' : 'alcohol'
                   )}
                 >
-                  <MetricCard {...metric} editable={true} />
+                  <MetricCard {...metric} editable={true} darkMode={darkMode} />
                 </Pressable>
               ))}
             </View>
           </View>
 
           {/* Device Collected */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Device Data</Text>
-            <Text style={styles.sectionSubtitle}>Data gathered by your device(s)</Text>
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Device Data</Text>
+            <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data gathered by your device(s)</Text>
             <View style={styles.metricsList}>
               {deviceMetrics.map((metric, index) => (
-                <MetricCard key={index} {...metric} />
+                <MetricCard key={index} {...metric} darkMode={darkMode} />
               ))}
             </View>
           </View>
 
           {/* External Sources */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>External Sources</Text>
-            <Text style={styles.sectionSubtitle}>Data from connected apps</Text>
+          <View style={[styles.section, darkMode && styles.sectionDark]}>
+            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>External Sources</Text>
+            <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data from connected apps</Text>
             <View style={styles.metricsList}>
               {externalMetrics.map((metric, index) => (
-                <MetricCard key={index} {...metric} />
+                <MetricCard key={index} {...metric} darkMode={darkMode} />
               ))}
             </View>
           </View>
@@ -294,50 +272,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,
-  },
-  header: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingTop: 8,
-  },
-  headerContent: {
-    width: '100%',
-    alignSelf: 'center',
-    padding: 24,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  settingsButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 16,
-    color: '#475569',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#64748b',
   },
   content: {
     width: '100%',
@@ -347,16 +289,28 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionDark: {
+    // Remove bright background/border in dark mode
+  },
   sectionTitle: {
     fontSize: 22,
     fontWeight: '500',
     color: '#334155',
     marginBottom: 6,
   },
+  sectionTitleDark: {
+    color: '#e2e8f0',
+  },
   sectionSubtitle: {
     fontSize: 18,
     color: '#64748b',
     marginBottom: 16,
+  },
+  sectionSubtitleDark: {
+    color: '#94a3b8',
+  },
+  textDark: {
+    color: '#e2e8f0',
   },
   metricsList: {
     gap: 6,
@@ -376,6 +330,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  metricCardDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
   metricHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -390,6 +348,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  metricIconContainerDark: {
+    backgroundColor: '#334155',
+  },
   metricTextContainer: {
     flex: 1,
   },
@@ -399,9 +360,15 @@ const styles = StyleSheet.create({
     color: '#334155',
     marginBottom: 4,
   },
+  metricLabelDark: {
+    color: '#e2e8f0',
+  },
   metricUnit: {
     fontSize: 16,
     color: '#94a3b8',
+  },
+  metricUnitDark: {
+    color: '#64748b',
   },
   statusContainer: {
     flexDirection: 'column',
@@ -421,6 +388,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     textAlign: 'right',
+  },
+  statusLabelDark: {
+    color: '#94a3b8',
   },
   modalOverlay: {
     flex: 1,
