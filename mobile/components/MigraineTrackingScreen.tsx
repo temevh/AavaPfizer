@@ -139,11 +139,11 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
         setAiInsights(insights);
 
         // Step 3: Save data to BigQuery with prediction
-        const saveRequest = createSaveDataRequest(userData, migraineData, prediction);
-        console.log('Saving data to backend:', saveRequest);
+        //const saveRequest = createSaveDataRequest(userData, migraineData, prediction);
+        //console.log('Saving data to backend:', saveRequest);
 
-        const saveResult = await saveData(saveRequest);
-        console.log('Save result:', saveResult);
+        //const saveResult = await saveData(saveRequest);
+        //console.log('Save result:', saveResult);
 
       } catch (error) {
         console.error('Error during AI analysis:', error);
