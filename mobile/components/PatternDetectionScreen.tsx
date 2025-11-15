@@ -21,16 +21,17 @@ interface PatternDetectionScreenProps {
 }
 
 const { width } = Dimensions.get('window');
-const maxWidth = Math.min(width - 48, 448);
+const maxWidth = Math.min(width, 448);
 
 interface PatternProps {
   type: 'positive' | 'negative' | 'warning' | 'insight';
   title: string;
   description: string;
   confidence: number;
+  isHighConfidence?: boolean;
 }
 
-function PatternCard({ type, title, description, confidence }: PatternProps) {
+function PatternCard({ type, title, description, confidence, isHighConfidence }: PatternProps) {
   const getIcon = () => {
     switch (type) {
       case 'positive':
@@ -60,7 +61,12 @@ function PatternCard({ type, title, description, confidence }: PatternProps) {
   const colors = getBgColor();
 
   return (
-    <View style={[styles.patternCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+    <View style={[
+      styles.patternCard,
+      { backgroundColor: colors.bg, borderColor: colors.border },
+      isHighConfidence && styles.highConfidenceCard
+    ]}>
+
       <View style={styles.patternContent}>
         <View style={styles.patternIconContainer}>
           {getIcon()}
@@ -74,10 +80,13 @@ function PatternCard({ type, title, description, confidence }: PatternProps) {
                 style={[
                   styles.confidenceBar,
                   { width: `${confidence}%` },
+                  isHighConfidence && styles.highConfidenceBar
                 ]}
               />
             </View>
-            <Text style={styles.confidenceText}>{confidence}% confidence</Text>
+            <Text style={[styles.confidenceText, isHighConfidence && styles.highConfidenceText]}>
+              {confidence}% confidence
+            </Text>
           </View>
         </View>
       </View>
@@ -167,9 +176,15 @@ export function PatternDetectionScreen({ navigation }: PatternDetectionScreenPro
 
           {/* Patterns List */}
           <View style={styles.patternsList}>
-            {patterns.map((pattern, index) => (
-              <PatternCard key={index} {...pattern} />
-            ))}
+            {patterns
+              .sort((a, b) => b.confidence - a.confidence)
+              .map((pattern, index) => (
+                <PatternCard 
+                  key={index} 
+                  {...pattern} 
+                  isHighConfidence={pattern.confidence >= 80}
+                />
+              ))}
           </View>
 
           {/* Footer Note */}
@@ -255,7 +270,7 @@ const styles = StyleSheet.create({
   },
   patternCard: {
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     borderWidth: 1,
   },
   patternContent: {
@@ -300,6 +315,39 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: 12,
     color: '#64748b',
+  },
+  highConfidenceCard: {
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  highConfidenceBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: '#9333ea',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    zIndex: 1,
+  },
+  highConfidenceBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  highConfidenceBar: {
+    backgroundColor: '#9333ea',
+  },
+  highConfidenceText: {
+    color: '#9333ea',
+    fontWeight: '600',
   },
   footerNote: {
     backgroundColor: '#f1f5f9',
