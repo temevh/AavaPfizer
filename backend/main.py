@@ -25,7 +25,11 @@ from schemas import (
     UpdateRequest,
     UpdateResponse,
     MetricsResponse,
-    HealthResponse
+    HealthResponse,
+    AccumulateRequest,
+    AccumulateResponse,
+    BatchUpdateResponse,
+    ClearSessionResponse
 )
 from config import settings
 
@@ -57,6 +61,9 @@ model_manager: OnlineLearningManager = None
 scaler = None
 label_encoder = None
 update_counter = 0
+
+# Session storage for accumulated data
+session_data = []  # List of (features, label) tuples
 
 
 def load_model():
@@ -190,10 +197,115 @@ async def predict(features: MigraineFeatures):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/update", response_model=UpdateResponse)
-async def update_model(request: UpdateRequest, background_tasks: BackgroundTasks):
+@app.post("/accumulate", response_model=AccumulateResponse)
+async def accumulate_data(request: AccumulateRequest):
     """
-    Update model with new labeled data (online learning).
+    Accumulate labeled data for later batch update.
+    Data is stored in session and not used to update model until /update is called.
+
+    Args:
+        request: Features and true label
+
+    Returns:
+        Accumulation status
+    """
+    global session_data
+
+    if model_manager is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+
+    try:
+        # Validate label
+        if request.true_label not in CLASS_NAMES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid label. Must be one of: {CLASS_NAMES}"
+            )
+
+        # Preprocess features
+        feature_array = np.array([request.features.to_tensor()], dtype=np.float32)
+        feature_scaled = scaler.transform(feature_array)
+        feature_tensor = torch.FloatTensor(feature_scaled)
+
+        # Get label index
+        label_idx = CLASS_NAMES.index(request.true_label)
+
+        # Store in session
+        session_data.append((feature_tensor, label_idx))
+
+        logger.info(f"Data accumulated: {request.true_label} (session size: {len(session_data)})")
+
+        return AccumulateResponse(
+            status="success",
+            session_size=len(session_data),
+            message=f"Data accumulated. Total samples in session: {len(session_data)}"
+        )
+
+    except Exception as e:
+        logger.error(f"Accumulate error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/update", response_model=BatchUpdateResponse)
+async def update_model(background_tasks: BackgroundTasks):
+    """
+    Update model with accumulated session data (batch learning).
+    Processes all data accumulated via /accumulate endpoint.
+
+    Args:
+        background_tasks: FastAPI background tasks
+
+    Returns:
+        Batch update status and metrics
+    """
+    global update_counter, session_data
+
+    if model_manager is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+
+    try:
+        # Check if there's session data
+        if len(session_data) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="No session data to update. Use /accumulate to add data first."
+            )
+
+        logger.info(f"Starting batch update with {len(session_data)} samples")
+
+        # Perform batch update
+        update_result = model_manager.batch_update(session_data)
+
+        # Increment counter and save
+        update_counter += 1
+        background_tasks.add_task(save_model_to_gcs)
+
+        # Clear session data after successful update
+        samples_processed = len(session_data)
+        session_data = []
+
+        logger.info(f"Batch update complete: {samples_processed} samples, avg_loss={update_result.get('avg_loss', 0):.4f}")
+
+        return BatchUpdateResponse(
+            status="success",
+            samples_processed=samples_processed,
+            avg_loss=update_result.get("avg_loss"),
+            total_updates=update_result.get("total_updates", 0),
+            session_cleared=True
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Batch update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/update_single", response_model=UpdateResponse)
+async def update_model_single(request: UpdateRequest, background_tasks: BackgroundTasks):
+    """
+    Update model with single labeled data point (immediate online learning).
+    This is the legacy endpoint for immediate updates without session accumulation.
 
     Args:
         request: Features and true label
@@ -252,6 +364,43 @@ async def update_model(request: UpdateRequest, background_tasks: BackgroundTasks
     except Exception as e:
         logger.error(f"Update error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/clear_session", response_model=ClearSessionResponse)
+async def clear_session():
+    """
+    Clear accumulated session data without updating the model.
+    Useful if user wants to discard accumulated data.
+
+    Returns:
+        Clear status
+    """
+    global session_data
+
+    samples_cleared = len(session_data)
+    session_data = []
+
+    logger.info(f"Session cleared: {samples_cleared} samples discarded")
+
+    return ClearSessionResponse(
+        status="success",
+        samples_cleared=samples_cleared,
+        message=f"Session cleared. {samples_cleared} samples discarded."
+    )
+
+
+@app.get("/session_info")
+async def get_session_info():
+    """
+    Get information about current session data.
+
+    Returns:
+        Session information
+    """
+    return {
+        "session_size": len(session_data),
+        "status": "ready" if len(session_data) > 0 else "empty"
+    }
 
 
 @app.get("/metrics", response_model=MetricsResponse)

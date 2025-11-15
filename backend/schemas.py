@@ -136,3 +136,51 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="Service status")
     model_loaded: bool = Field(..., description="Whether model is loaded")
     version: str = Field(..., description="API version")
+
+
+class AccumulateRequest(BaseModel):
+    """Request to accumulate data for later batch update."""
+
+    features: MigraineFeatures
+    true_label: str = Field(..., description="True migraine type (user confirmed)")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "features": {
+                    "age": 35, "duration": 2, "frequency": 5, "location": 1,
+                    "character": 1, "intensity": 3, "nausea": 1, "vomit": 1,
+                    "phonophobia": 1, "photophobia": 1, "visual": 0, "sensory": 0,
+                    "dysphasia": 0, "dysarthria": 0, "vertigo": 0, "tinnitus": 0,
+                    "hypoacusis": 0, "diplopia": 0, "defect": 0, "ataxia": 0,
+                    "conscience": 0, "paresthesia": 0, "dpf": 1
+                },
+                "true_label": "Migraine without aura"
+            }
+        }
+
+
+class AccumulateResponse(BaseModel):
+    """Response from accumulate endpoint."""
+
+    status: str = Field(..., description="Accumulation status")
+    session_size: int = Field(..., description="Number of samples in current session")
+    message: str = Field(..., description="Status message")
+
+
+class BatchUpdateResponse(BaseModel):
+    """Response from batch model update."""
+
+    status: str = Field(..., description="Update status")
+    samples_processed: int = Field(..., description="Number of samples processed")
+    avg_loss: Optional[float] = Field(None, description="Average training loss")
+    total_updates: int = Field(..., description="Total number of updates performed")
+    session_cleared: bool = Field(..., description="Whether session data was cleared")
+
+
+class ClearSessionResponse(BaseModel):
+    """Response from clear session endpoint."""
+
+    status: str = Field(..., description="Clear status")
+    samples_cleared: int = Field(..., description="Number of samples cleared")
+    message: str = Field(..., description="Status message")

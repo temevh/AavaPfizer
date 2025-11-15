@@ -183,6 +183,70 @@ class OnlineLearningManager:
             "total_updates": self.total_updates
         }
 
+    def batch_update(self, batch_data: list) -> dict:
+        """
+        Perform batch gradient update on accumulated session data.
+
+        Args:
+            batch_data: List of (input_tensor, label_idx) tuples
+
+        Returns:
+            Dictionary with batch update metrics
+        """
+        if len(batch_data) == 0:
+            return {
+                "updated": False,
+                "reason": "empty_batch",
+                "avg_loss": None,
+                "total_updates": self.total_updates
+            }
+
+        self.model.train()
+
+        # Combine all samples into batches
+        all_inputs = torch.cat([data[0] for data in batch_data], dim=0).to(self.device)
+        all_labels = torch.tensor([data[1] for data in batch_data], dtype=torch.long).to(self.device)
+
+        # Forward pass on entire batch
+        logits = self.model(all_inputs)
+        loss = self.criterion(logits, all_labels)
+
+        # Backward pass
+        self.optimizer.zero_grad()
+        loss.backward()
+
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
+        self.optimizer.step()
+
+        # Store all samples in replay buffer
+        for input_data, label_idx in batch_data:
+            label_tensor = torch.tensor([label_idx], dtype=torch.long)
+            self.replay_buffer.append((input_data.cpu(), label_tensor.cpu()))
+
+        # Track metrics
+        batch_size = len(batch_data)
+        self.total_updates += batch_size
+        avg_loss = loss.item()
+        self.recent_losses.append(avg_loss)
+        if len(self.recent_losses) > 100:
+            self.recent_losses.pop(0)
+
+        logger.info(f"Batch update complete: {batch_size} samples, avg_loss={avg_loss:.4f}")
+
+        # Perform experience replay
+        replay_loss = self._replay_experience(n_samples=min(10, len(self.replay_buffer)))
+        logger.info(f"Experience replay after batch: avg_loss={replay_loss:.4f}")
+
+        return {
+            "updated": True,
+            "avg_loss": avg_loss,
+            "batch_size": batch_size,
+            "total_updates": self.total_updates,
+            "replay_loss": replay_loss
+        }
+
     def _replay_experience(self, n_samples: int = 5) -> float:
         """
         Replay random samples from the buffer to prevent forgetting.
