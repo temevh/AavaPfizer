@@ -12,6 +12,7 @@ import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingScreen } from './OnboardingScreen';
+import { useUser } from '../contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width, 448);
@@ -88,6 +89,7 @@ function MetricCard({ iconName, label, value, unit, editable = false, darkMode }
 }
 
 export function DashboardScreen({ navigation }: DashboardScreenProps) {
+  const { userData } = useUser();
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
@@ -95,6 +97,9 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [waterCount, setWaterCount] = useState(6);
   const [alcoholCount, setAlcoholCount] = useState(0);
   const { darkMode } = useTheme();
+
+  // Get user's selected integrations
+  const selectedIntegrations = userData?.integrations || [];
 
   const handleEditMetric = (type: 'meals' | 'hydration' | 'alcohol') => {
     setTrackingType(type);
@@ -138,20 +143,28 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     { iconName: 'wine', label: 'Alcohol', value: alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5)), unit: alcoholCount === 0 ? 'None today' : `${alcoholCount} units` },
   ];
 
-  const deviceMetrics: MetricProps[] = [
-    { iconName: 'walk', label: 'Steps', value: 0.4, unit: '5,240 steps' },
-    { iconName: 'sunny', label: 'Outdoor Brightness', value: 0.6, unit: 'Moderate' },
-    { iconName: 'moon', label: 'Sleep Quality', value: 0.8, unit: '7.5 hours' },
-    { iconName: 'phone-portrait', label: 'Usage Accuracy', value: 0.8, unit: 'Low typos' },
-    { iconName: 'eye', label: 'Screen Brightness', value: 0.4, unit: '75% avg' },
-    { iconName: 'time', label: 'Screen Time', value: 0.2, unit: '8.5 hours' },
-    { iconName: 'heart', label: 'Heart Rate', value: 0.8, unit: '68 bpm avg' },
+  const allDeviceMetrics = [
+    { id: 'steps', iconName: 'walk' as keyof typeof Ionicons.glyphMap, label: 'Steps', value: 0.4, unit: '5,240 steps' },
+    { id: 'outdoor-brightness', iconName: 'sunny' as keyof typeof Ionicons.glyphMap, label: 'Outdoor Brightness', value: 0.6, unit: 'Moderate' },
+    { id: 'sleep', iconName: 'moon' as keyof typeof Ionicons.glyphMap, label: 'Sleep Quality', value: 0.8, unit: '7.5 hours' },
+    { id: 'usage-accuracy', iconName: 'phone-portrait' as keyof typeof Ionicons.glyphMap, label: 'Usage Accuracy', value: 0.8, unit: 'Low typos' },
+    { id: 'screen-brightness', iconName: 'eye' as keyof typeof Ionicons.glyphMap, label: 'Screen Brightness', value: 0.4, unit: '75% avg' },
+    { id: 'screen-time', iconName: 'time' as keyof typeof Ionicons.glyphMap, label: 'Screen Time', value: 0.2, unit: '8.5 hours' },
+    { id: 'heart-rate', iconName: 'heart' as keyof typeof Ionicons.glyphMap, label: 'Heart Rate', value: 0.8, unit: '68 bpm avg' },
   ];
 
-  const externalMetrics: MetricProps[] = [
-    { iconName: 'calendar', label: 'Calendar Stress', value: 0.4, unit: '8 meetings' },
-    { iconName: 'cloud', label: 'Weather', value: 0.6, unit: 'Stable pressure' },
+  const deviceMetrics = allDeviceMetrics.filter(metric => 
+    selectedIntegrations.includes(metric.id)
+  );
+
+  const allExternalMetrics = [
+    { id: 'calendar', iconName: 'calendar' as keyof typeof Ionicons.glyphMap, label: 'Calendar Stress', value: 0.4, unit: '8 meetings' },
+    { id: 'weather', iconName: 'cloud' as keyof typeof Ionicons.glyphMap, label: 'Weather', value: 0.6, unit: 'Stable pressure' },
   ];
+
+  const externalMetrics = allExternalMetrics.filter(metric => 
+    selectedIntegrations.includes(metric.id)
+  );
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -182,26 +195,30 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
 
           {/* Device Collected */}
-          <View style={[styles.section, darkMode && styles.sectionDark]}>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Device Data</Text>
-            <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data gathered by your device(s)</Text>
-            <View style={styles.metricsList}>
-              {deviceMetrics.map((metric, index) => (
-                <MetricCard key={index} {...metric} darkMode={darkMode} />
-              ))}
+          {deviceMetrics.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Device Data</Text>
+              <Text style={styles.sectionSubtitle}>Data gathered by your device(s)</Text>
+              <View style={styles.metricsList}>
+                {deviceMetrics.map((metric, index) => (
+                  <MetricCard key={index} {...metric} />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* External Sources */}
-          <View style={[styles.section, darkMode && styles.sectionDark]}>
-            <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>External Sources</Text>
-            <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data from connected apps</Text>
-            <View style={styles.metricsList}>
-              {externalMetrics.map((metric, index) => (
-                <MetricCard key={index} {...metric} darkMode={darkMode} />
-              ))}
+          {externalMetrics.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>External Sources</Text>
+              <Text style={styles.sectionSubtitle}>Data from connected apps</Text>
+              <View style={styles.metricsList}>
+                {externalMetrics.map((metric, index) => (
+                  <MetricCard key={index} {...metric} />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
         </View>
       </ScrollView>
 

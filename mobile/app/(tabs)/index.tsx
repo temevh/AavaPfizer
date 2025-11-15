@@ -1,21 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
 import { NavigationBar } from '@/components/NavigationBar';
+import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
 
 export default function HomeScreen() {
-  const router = useRouter();
   const { darkMode } = useTheme();
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
-  const user = {
-    name: "Alex"
-  }
+  const { userData } = useUser();
+  console.log("User Data in HomeScreen:", userData);
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -26,7 +26,7 @@ export default function HomeScreen() {
         <View style={[styles.content, { maxWidth }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, darkMode && styles.titleDark]}>Hello {user.name}</Text>
+            <Text style={[styles.title, darkMode && styles.titleDark]}>Hello {userData?.name ?? ""}!</Text>
             <Text style={[styles.subtitle, darkMode && styles.subtitleDark]}>How are we feeling today?</Text>
           </View>
 
@@ -42,10 +42,31 @@ export default function HomeScreen() {
           <Text style={styles.emergencyText}>Emergency Help</Text>
           <Text style={styles.emergencySubtext}>Tap for immediate migraine relief tips</Text>
         </Pressable>
+
+        {/* Onboarding Button */}
+        <Pressable
+          onPress={() => setShowOnboarding(true)}
+          style={({ pressed }) => [
+            styles.onboardingButton,
+            pressed && styles.onboardingButtonPressed,
+          ]}
+        >
+          <Ionicons name="settings-outline" size={24} color="#9333ea" />
+          <Text style={[styles.onboardingButtonText, darkMode && styles.onboardingButtonTextDark]}>Setup & Preferences</Text>
+        </Pressable>
       </View>
     </ScrollView>
     
     <FloatingMenu />
+
+    {/* Onboarding Modal */}
+    <Modal
+      visible={showOnboarding}
+      animationType="slide"
+      onRequestClose={() => setShowOnboarding(false)}
+    >
+      <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+    </Modal>
     </View>
   );
 }
@@ -119,5 +140,33 @@ const styles = StyleSheet.create({
   emergencySubtext: {
     fontSize: 14,
     color: '#fecdd3',
+  },
+  onboardingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#9333ea',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  onboardingButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  onboardingButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#9333ea',
+  },
+  onboardingButtonTextDark: {
+    color: '#a855f7',
   },
 });
