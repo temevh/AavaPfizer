@@ -45,7 +45,11 @@ export function NavigationBar({
           
           <Pressable
             onPress={toggleDarkMode}
-            style={styles.darkModeButton}
+            style={({ pressed }) => [
+              styles.darkModeButton,
+              darkMode && styles.darkModeButtonDark,
+              pressed && styles.darkModeButtonPressed,
+            ]}
           >
             <Ionicons 
               name={darkMode ? 'sunny' : 'moon'} 
@@ -73,13 +77,13 @@ export function NavigationBar({
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#f8fafc',
     borderBottomWidth: 1,
-    borderBottomColor: '#bfdbfe',
+    borderBottomColor: '#f8fafc',
   },
   headerDark: {
-    backgroundColor: '#1e293b',
-    borderBottomColor: '#334155',
+    backgroundColor: '#0f172a',
+    borderBottomColor: '#0f172a',
   },
   headerContent: {
     width: '100%',
@@ -103,10 +107,10 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#e2e8f0',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -129,13 +133,31 @@ const styles = StyleSheet.create({
   darkModeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    padding: 2,
-    minHeight: 32,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  darkModeButtonDark: {
+    backgroundColor: '#334155',
+    borderColor: '#475569',
+  },
+  darkModeButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   darkModeText: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1e293b',
   },
   headerTitle: {
     fontSize: 20,
