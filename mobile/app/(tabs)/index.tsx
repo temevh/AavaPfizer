@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import FloatingMenu from './menu';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
@@ -14,13 +15,14 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={[styles.content, { maxWidth }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Hello {user.name}</Text>
-          <Text style={styles.subtitle}>How are we feeling today?</Text>
-        </View>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <View style={[styles.content, { maxWidth }]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Hello {user.name}</Text>
+            <Text style={styles.subtitle}>How are we feeling today?</Text>
+          </View>
 
         {/* Emergency Button */}
         <Pressable
@@ -100,6 +102,9 @@ export default function HomeScreen() {
         </View>
       </View>
     </ScrollView>
+    
+    <FloatingMenu />
+    </View>
   );
 }
 
