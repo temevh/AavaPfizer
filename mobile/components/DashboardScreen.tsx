@@ -304,7 +304,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
         showBackButton={true}
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Button title="test notification" onPress={testNotification} />
+
         <View style={[styles.content, { maxWidth }]}>
           {/* AI Insight Card */}
           {(aiInsight || loadingInsight) && (
