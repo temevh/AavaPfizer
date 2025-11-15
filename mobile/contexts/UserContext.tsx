@@ -8,9 +8,21 @@ interface DashboardMetric {
 
 interface DashboardData {
   date: string; // YYYY-MM-DD format
-  meals: DashboardMetric | null; // Allow null for metrics that haven't been entered yet
-  hydration: DashboardMetric | null;
-  alcohol: DashboardMetric | null;
+  // Manual metrics
+  meals: DashboardMetric;
+  hydration: DashboardMetric;
+  alcohol: DashboardMetric;
+  // Device metrics
+  steps: DashboardMetric;
+  outdoorBrightness: DashboardMetric;
+  sleep: DashboardMetric;
+  usageAccuracy: DashboardMetric;
+  screenBrightness: DashboardMetric;
+  screenTime: DashboardMetric;
+  heartRate: DashboardMetric;
+  // External metrics
+  calendar: DashboardMetric;
+  weather: DashboardMetric;
   hasManualData: boolean; // Track if any manual data has been entered
 }
 
@@ -56,10 +68,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (userData?.dashboardData) {
       const today = getTodayDateString();
       if (userData.dashboardData.date !== today) {
-        // Reset dashboard data for new day
+        // Reset dashboard data for new day - initialize with realistic values
+        const newDashboardData: DashboardData = {
+          date: today,
+          // Manual metrics - reset to 0 for new day
+          meals: { value: 0, status: 'Critical', unit: '0 meals today' },
+          hydration: { value: 0, status: 'Critical', unit: '0 glasses' },
+          alcohol: { value: 1.0, status: 'Excellent', unit: 'None today' },
+          // Device metrics - initialized with realistic values
+          steps: { value: 0.52, status: 'Fair', unit: '5,240 steps' },
+          outdoorBrightness: { value: 0.6, status: 'Good', unit: 'Moderate' },
+          sleep: { value: 0.75, status: 'Good', unit: '7.5 hours' },
+          usageAccuracy: { value: 0.85, status: 'Excellent', unit: 'Low typos' },
+          screenBrightness: { value: 0.5, status: 'Fair', unit: '75% avg' },
+          screenTime: { value: 0.3, status: 'Poor', unit: '8.5 hours' },
+          heartRate: { value: 0.8, status: 'Excellent', unit: '68 bpm avg' },
+          // External metrics - initialized with realistic values
+          calendar: { value: 0.4, status: 'Fair', unit: '8 meetings' },
+          weather: { value: 0.6, status: 'Good', unit: 'Stable pressure' },
+          hasManualData: false
+        };
         setUserData(prev => prev ? {
           ...prev,
-          dashboardData: null
+          dashboardData: newDashboardData
         } : null);
       }
     }
@@ -116,13 +147,32 @@ export function UserProvider({ children }: { children: ReactNode }) {
       };
       
       // Initialize dashboard data if integrations are selected and no dashboard data exists
-      if (integrations.length > 0 && !newData.dashboardData) {
+      // OR if dashboard data has null values (fix old data)
+      const hasNullValues = newData.dashboardData && (
+        newData.dashboardData.meals === null || 
+        newData.dashboardData.hydration === null || 
+        newData.dashboardData.alcohol === null
+      );
+      
+      if (integrations.length > 0 && (!newData.dashboardData || hasNullValues)) {
         const today = getTodayDateString();
         newData.dashboardData = {
           date: today,
-          meals: null,
-          hydration: null,
-          alcohol: null,
+          // Manual metrics - initialized with realistic values
+          meals: { value: 0.6, status: 'Good', unit: '3 meals today' },
+          hydration: { value: 0.6, status: 'Good', unit: '6 glasses' },
+          alcohol: { value: 1.0, status: 'Excellent', unit: 'None today' },
+          // Device metrics - initialized with realistic values
+          steps: { value: 0.52, status: 'Fair', unit: '5,240 steps' },
+          outdoorBrightness: { value: 0.6, status: 'Good', unit: 'Moderate' },
+          sleep: { value: 0.75, status: 'Good', unit: '7.5 hours' },
+          usageAccuracy: { value: 0.85, status: 'Excellent', unit: 'Low typos' },
+          screenBrightness: { value: 0.5, status: 'Fair', unit: '75% avg' },
+          screenTime: { value: 0.3, status: 'Poor', unit: '8.5 hours' },
+          heartRate: { value: 0.8, status: 'Excellent', unit: '68 bpm avg' },
+          // External metrics - initialized with realistic values
+          calendar: { value: 0.4, status: 'Fair', unit: '8 meetings' },
+          weather: { value: 0.6, status: 'Good', unit: 'Stable pressure' },
           hasManualData: false
         };
       }
@@ -135,11 +185,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (!userData) return;
     
     const today = getTodayDateString();
-    const newDashboardData = {
+    const newDashboardData: DashboardData = {
       date: today,
-      meals: null,
-      hydration: null,
-      alcohol: null,
+      // Manual metrics - initialized with realistic values
+      meals: { value: 0.6, status: 'Good', unit: '3 meals today' },
+      hydration: { value: 0.6, status: 'Good', unit: '6 glasses' },
+      alcohol: { value: 1.0, status: 'Excellent', unit: 'None today' },
+      // Device metrics - initialized with realistic values
+      steps: { value: 0.52, status: 'Fair', unit: '5,240 steps' },
+      outdoorBrightness: { value: 0.6, status: 'Good', unit: 'Moderate' },
+      sleep: { value: 0.75, status: 'Good', unit: '7.5 hours' },
+      usageAccuracy: { value: 0.85, status: 'Excellent', unit: 'Low typos' },
+      screenBrightness: { value: 0.5, status: 'Fair', unit: '75% avg' },
+      screenTime: { value: 0.3, status: 'Poor', unit: '8.5 hours' },
+      heartRate: { value: 0.8, status: 'Excellent', unit: '68 bpm avg' },
+      // External metrics - initialized with realistic values
+      calendar: { value: 0.4, status: 'Fair', unit: '8 meetings' },
+      weather: { value: 0.6, status: 'Good', unit: 'Stable pressure' },
       hasManualData: false
     };
 
@@ -159,6 +221,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const dashboardData: DashboardData = {
       date: today,
+      // Manual metrics
       meals: {
         value: Math.min(mealsValue, 1), // Cap at 1
         status: getStatusFromValue(Math.min(mealsValue, 1)),
@@ -174,6 +237,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
         status: getStatusFromValue(alcoholValue),
         unit: alcoholCount === 0 ? 'None today' : `${alcoholCount} units`
       },
+      // Device metrics - keep existing values or initialize to 0
+      steps: userData?.dashboardData?.steps || { value: 0, status: 'Critical', unit: '0 steps' },
+      outdoorBrightness: userData?.dashboardData?.outdoorBrightness || { value: 0, status: 'Critical', unit: 'No data' },
+      sleep: userData?.dashboardData?.sleep || { value: 0, status: 'Critical', unit: '0 hours' },
+      usageAccuracy: userData?.dashboardData?.usageAccuracy || { value: 0, status: 'Critical', unit: 'No data' },
+      screenBrightness: userData?.dashboardData?.screenBrightness || { value: 0, status: 'Critical', unit: 'No data' },
+      screenTime: userData?.dashboardData?.screenTime || { value: 0, status: 'Critical', unit: '0 hours' },
+      heartRate: userData?.dashboardData?.heartRate || { value: 0, status: 'Critical', unit: '0 bpm avg' },
+      // External metrics - keep existing values or initialize to 0
+      calendar: userData?.dashboardData?.calendar || { value: 0, status: 'Critical', unit: 'No data' },
+      weather: userData?.dashboardData?.weather || { value: 0, status: 'Critical', unit: 'No data' },
       hasManualData: true // Mark that manual data has been entered
     };
 

@@ -8,10 +8,12 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface MigraineTrackingScreenProps {
   navigation: {
@@ -42,7 +44,24 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [enableAIAnalysis, setEnableAIAnalysis] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [predictionResult, setPredictionResult] = useState<{prediction: string; confidence: number} | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const { darkMode } = useTheme();
+  const { userData, updateIntegrations } = useUser();
+
+  React.useEffect(() => {
+    if (userData?.dashboardData) {
+      const hasNullValues = 
+        userData.dashboardData.meals === null || 
+        userData.dashboardData.hydration === null || 
+        userData.dashboardData.alcohol === null;
+      
+      if (hasNullValues && userData.integrations) {
+        updateIntegrations(userData.integrations);
+      }
+    }
+  }, [userData?.dashboardData, userData?.integrations, updateIntegrations]);
 
   const symptoms = [
     'Aura',
@@ -63,20 +82,79 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
     );
   };
 
-  const handleSubmit = () => {
-    setShowSuccess(true);
-    
-    if (enableAIAnalysis) {
-      const data = {
-        intensity: intensity,
-        symptoms: selectedSymptoms,
-        duration: duration,
-        notes: notes,
-      }
-      console.log('Migraine Log Submitted:', data);
-      // Send data to backend/CNN for analysis
+  const handleSubmit = async () => {
+    if (!userData) {
+      console.error('No user data available');
+      return;
     }
-    
+
+    setShowSuccess(true);
+
+    console.log('=== UserContext Data ===');
+    console.log('Full userData object:', JSON.stringify(userData, null, 2));
+    console.log('User name:', userData?.name);
+    console.log('Age bracket:', userData?.ageBracket);
+    console.log('Integrations:', userData?.integrations);
+    console.log('Dashboard data:', userData?.dashboardData);
+
+    if (enableAIAnalysis) {
+      try {
+        setLoadingInsights(true);
+
+        // Import the API functions and mapper
+        const { predict, saveData } = await import('@/services/migraineApi');
+        const { getFeaturesForPrediction, createSaveDataRequest } = await import('@/utils/dataMapper');
+        const { generateMigraineInsights } = await import('@/services/geminiService');
+
+        // Prepare migraine data
+        const migraineData = {
+          intensity,
+          selectedSymptoms,
+          duration,
+        };
+
+        // Step 1: Get features and make prediction
+        const features = getFeaturesForPrediction(userData, migraineData);
+        console.log('Sending prediction request with features:', features);
+
+        const prediction = await predict(features);
+        console.log('Prediction result:', prediction);
+
+        // Store prediction result for display
+        setPredictionResult({
+          prediction: prediction.prediction,
+          confidence: prediction.confidence,
+        });
+
+        // Step 2: Generate AI insights using Gemini
+        const insights = await generateMigraineInsights(
+          selectedSymptoms,
+          intensity,
+          duration,
+          prediction.prediction,
+          prediction.confidence,
+          userData?.dashboardData
+        );
+        console.log('AI Insights:', insights);
+        setAiInsights(insights);
+
+        // Step 3: Save data to BigQuery with prediction
+        //const saveRequest = createSaveDataRequest(userData, migraineData, prediction);
+        //console.log('Saving data to backend:', saveRequest);
+
+        //const saveResult = await saveData(saveRequest);
+        //console.log('Save result:', saveResult);
+
+      } catch (error) {
+        console.error('Error during AI analysis:', error);
+        setAiInsights('Unable to generate insights at this time. Please try again later.');
+        // Continue with success screen even if API fails
+      } finally {
+        setLoadingInsights(false);
+      }
+    }
+    console.log('========================');
+
     setTimeout(() => {
       navigation.navigate('Main');
     }, 1500);
@@ -84,14 +162,63 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
 
   if (showSuccess) {
     return (
-      <View style={styles.successContainer}>
-        <View style={styles.successContent}>
-          <View style={styles.successIconContainer}>
-            <Ionicons name="checkmark-circle" size={40} color="#10b981" />
+      <View style={[styles.successContainer, darkMode && styles.successContainerDark]}>
+        <ScrollView
+          style={styles.successScrollView}
+          contentContainerStyle={styles.successScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.successContent}>
+            <View style={styles.successIconContainer}>
+              <Ionicons name="checkmark-circle" size={40} color="#10b981" />
+            </View>
+            <Text style={[styles.successTitle, darkMode && styles.textDark]}>Migraine Logged</Text>
+            <Text style={[styles.successSubtitle, darkMode && styles.successSubtitleDark]}>Data saved successfully</Text>
+
+            {/* Loading AI Insights */}
+            {loadingInsights && (
+              <View style={styles.insightsLoadingContainer}>
+                <ActivityIndicator size="large" color="#9333ea" />
+                <Text style={[styles.insightsLoadingText, darkMode && styles.successSubtitleDark]}>
+                  Generating AI insights...
+                </Text>
+              </View>
+            )}
+
+            {/* Prediction Result */}
+            {predictionResult && !loadingInsights && (
+              <View style={[styles.predictionCard, darkMode && styles.predictionCardDark]}>
+                <View style={styles.predictionHeader}>
+                  <Ionicons name="analytics" size={20} color="#9333ea" />
+                  <Text style={[styles.predictionHeaderText, darkMode && styles.textDark]}>
+                    AI Prediction
+                  </Text>
+                </View>
+                <Text style={[styles.predictionType, darkMode && styles.textDark]}>
+                  {predictionResult.prediction}
+                </Text>
+                <Text style={[styles.predictionConfidence, darkMode && styles.successSubtitleDark]}>
+                  Confidence: {Math.round(predictionResult.confidence * 100)}%
+                </Text>
+              </View>
+            )}
+
+            {/* AI Insights */}
+            {aiInsights && !loadingInsights && (
+              <View style={[styles.insightsCard, darkMode && styles.insightsCardDark]}>
+                <View style={styles.insightsHeader}>
+                  <Ionicons name="sparkles" size={20} color="#9333ea" />
+                  <Text style={[styles.insightsHeaderText, darkMode && styles.textDark]}>
+                    Personalized Insights
+                  </Text>
+                </View>
+                <Text style={[styles.insightsText, darkMode && styles.successSubtitleDark]}>
+                  {aiInsights}
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.successTitle}>Migraine Logged</Text>
-          <Text style={styles.successSubtitle}>Data saved successfully</Text>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -558,12 +685,23 @@ const styles = StyleSheet.create({
   successContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  successContainerDark: {
+    backgroundColor: '#0f172a',
+  },
+  successScrollView: {
+    flex: 1,
+  },
+  successScrollContent: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    minHeight: '100%',
   },
   successContent: {
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 448,
   },
   successIconContainer: {
     width: 80,
@@ -582,6 +720,87 @@ const styles = StyleSheet.create({
   },
   successSubtitle: {
     fontSize: 16,
+    color: '#64748b',
+    marginBottom: 24,
+  },
+  successSubtitleDark: {
+    color: '#94a3b8',
+  },
+  insightsLoadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+    gap: 12,
+  },
+  insightsLoadingText: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  predictionCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  predictionCardDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#4c1d95',
+  },
+  predictionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  predictionHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  predictionType: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  predictionConfidence: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  insightsCard: {
+    width: '100%',
+    backgroundColor: '#faf5ff',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+  },
+  insightsCardDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  insightsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  insightsHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  insightsText: {
+    fontSize: 14,
+    lineHeight: 20,
     color: '#64748b',
   },
   modalOverlay: {

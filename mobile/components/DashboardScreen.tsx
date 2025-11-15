@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -93,6 +94,8 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [loadingInsight, setLoadingInsight] = useState(false);
   
   // Initialize from stored data or defaults
   const [mealsCount, setMealsCount] = useState(() => {
@@ -121,6 +124,27 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   });
   
   const { darkMode } = useTheme();
+
+  // Load AI insights when dashboard loads
+  useEffect(() => {
+    loadDailyInsight();
+  }, [userData?.dashboardData]);
+
+  const loadDailyInsight = async () => {
+    if (!userData?.dashboardData) return;
+
+    setLoadingInsight(true);
+    try {
+      const { generateDashboardInsights } = await import('@/services/geminiService');
+      const insights = await generateDashboardInsights(userData.dashboardData);
+      setAiInsight(insights);
+    } catch (error) {
+      console.error('Failed to load AI insight:', error);
+      setAiInsight('');
+    } finally {
+      setLoadingInsight(false);
+    }
+  };
 
   // Get user's selected integrations
   const selectedIntegrations = userData?.integrations || [];
@@ -166,36 +190,78 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     setShowTrackingModal(false);
   };
 
-  // Mock data - use stored values or calculate from current counts
+  // Use data from UserContext - all metrics default to 0 if not set
   const manualMetrics: MetricProps[] = [
     { 
       iconName: 'restaurant', 
       label: 'Meals', 
-      value: userData?.dashboardData?.meals?.value ?? mealsCount / 5, 
-      unit: userData?.dashboardData?.meals?.unit ?? `${mealsCount} meals today` 
+      value: userData?.dashboardData?.meals?.value ?? 0, 
+      unit: userData?.dashboardData?.meals?.unit ?? '0 meals today' 
     },
     { 
       iconName: 'water', 
       label: 'Hydration', 
-      value: userData?.dashboardData?.hydration?.value ?? waterCount / 10, 
-      unit: userData?.dashboardData?.hydration?.unit ?? `${waterCount} glasses` 
+      value: userData?.dashboardData?.hydration?.value ?? 0, 
+      unit: userData?.dashboardData?.hydration?.unit ?? '0 glasses' 
     },
     { 
       iconName: 'wine', 
       label: 'Alcohol', 
-      value: userData?.dashboardData?.alcohol?.value ?? (alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5))), 
-      unit: userData?.dashboardData?.alcohol?.unit ?? (alcoholCount === 0 ? 'None today' : `${alcoholCount} units`) 
+      value: userData?.dashboardData?.alcohol?.value ?? 1.0, 
+      unit: userData?.dashboardData?.alcohol?.unit ?? 'None today' 
     },
   ];
 
   const allDeviceMetrics = [
-    { id: 'steps', iconName: 'walk' as keyof typeof Ionicons.glyphMap, label: 'Steps', value: 0.4, unit: '5,240 steps' },
-    { id: 'outdoor-brightness', iconName: 'sunny' as keyof typeof Ionicons.glyphMap, label: 'Outdoor Brightness', value: 0.6, unit: 'Moderate' },
-    { id: 'sleep', iconName: 'moon' as keyof typeof Ionicons.glyphMap, label: 'Sleep Quality', value: 0.8, unit: '7.5 hours' },
-    { id: 'usage-accuracy', iconName: 'phone-portrait' as keyof typeof Ionicons.glyphMap, label: 'Usage Accuracy', value: 0.8, unit: 'Low typos' },
-    { id: 'screen-brightness', iconName: 'eye' as keyof typeof Ionicons.glyphMap, label: 'Screen Brightness', value: 0.4, unit: '75% avg' },
-    { id: 'screen-time', iconName: 'time' as keyof typeof Ionicons.glyphMap, label: 'Screen Time', value: 0.2, unit: '8.5 hours' },
-    { id: 'heart-rate', iconName: 'heart' as keyof typeof Ionicons.glyphMap, label: 'Heart Rate', value: 0.8, unit: '68 bpm avg' },
+    { 
+      id: 'steps', 
+      iconName: 'walk' as keyof typeof Ionicons.glyphMap, 
+      label: 'Steps', 
+      value: userData?.dashboardData?.steps?.value ?? 0, 
+      unit: userData?.dashboardData?.steps?.unit ?? '0 steps' 
+    },
+    { 
+      id: 'outdoor-brightness', 
+      iconName: 'sunny' as keyof typeof Ionicons.glyphMap, 
+      label: 'Outdoor Brightness', 
+      value: userData?.dashboardData?.outdoorBrightness?.value ?? 0, 
+      unit: userData?.dashboardData?.outdoorBrightness?.unit ?? 'No data' 
+    },
+    { 
+      id: 'sleep', 
+      iconName: 'moon' as keyof typeof Ionicons.glyphMap, 
+      label: 'Sleep Quality', 
+      value: userData?.dashboardData?.sleep?.value ?? 0, 
+      unit: userData?.dashboardData?.sleep?.unit ?? '0 hours' 
+    },
+    { 
+      id: 'usage-accuracy', 
+      iconName: 'phone-portrait' as keyof typeof Ionicons.glyphMap, 
+      label: 'Usage Accuracy', 
+      value: userData?.dashboardData?.usageAccuracy?.value ?? 0, 
+      unit: userData?.dashboardData?.usageAccuracy?.unit ?? 'No data' 
+    },
+    { 
+      id: 'screen-brightness', 
+      iconName: 'eye' as keyof typeof Ionicons.glyphMap, 
+      label: 'Screen Brightness', 
+      value: userData?.dashboardData?.screenBrightness?.value ?? 0, 
+      unit: userData?.dashboardData?.screenBrightness?.unit ?? 'No data' 
+    },
+    { 
+      id: 'screen-time', 
+      iconName: 'time' as keyof typeof Ionicons.glyphMap, 
+      label: 'Screen Time', 
+      value: userData?.dashboardData?.screenTime?.value ?? 0, 
+      unit: userData?.dashboardData?.screenTime?.unit ?? '0 hours' 
+    },
+    { 
+      id: 'heart-rate', 
+      iconName: 'heart' as keyof typeof Ionicons.glyphMap, 
+      label: 'Heart Rate', 
+      value: userData?.dashboardData?.heartRate?.value ?? 0, 
+      unit: userData?.dashboardData?.heartRate?.unit ?? '0 bpm avg' 
+    },
   ];
 
   const deviceMetrics = allDeviceMetrics.filter(metric => 
@@ -203,8 +269,20 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   );
 
   const allExternalMetrics = [
-    { id: 'calendar', iconName: 'calendar' as keyof typeof Ionicons.glyphMap, label: 'Calendar Stress', value: 0.4, unit: '8 meetings' },
-    { id: 'weather', iconName: 'cloud' as keyof typeof Ionicons.glyphMap, label: 'Weather', value: 0.6, unit: 'Stable pressure' },
+    { 
+      id: 'calendar', 
+      iconName: 'calendar' as keyof typeof Ionicons.glyphMap, 
+      label: 'Calendar Stress', 
+      value: userData?.dashboardData?.calendar?.value ?? 0, 
+      unit: userData?.dashboardData?.calendar?.unit ?? 'No data' 
+    },
+    { 
+      id: 'weather', 
+      iconName: 'cloud' as keyof typeof Ionicons.glyphMap, 
+      label: 'Weather', 
+      value: userData?.dashboardData?.weather?.value ?? 0, 
+      unit: userData?.dashboardData?.weather?.unit ?? 'No data' 
+    },
   ];
 
   const externalMetrics = allExternalMetrics.filter(metric => 
@@ -220,6 +298,44 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.content, { maxWidth }]}>
+          {/* AI Insight Card */}
+          {(aiInsight || loadingInsight) && (
+            <View style={[styles.insightCard, darkMode && styles.insightCardDark]}>
+              <View style={styles.insightHeader}>
+                <View style={styles.insightHeaderLeft}>
+                  <View style={styles.aiIconContainer}>
+                    <Ionicons name="sparkles" size={18} color="#9333ea" />
+                  </View>
+                  <Text style={[styles.insightTitle, darkMode && styles.textDark]}>
+                    AI Daily Insight
+                  </Text>
+                </View>
+                {aiInsight && !loadingInsight && (
+                  <Pressable onPress={loadDailyInsight}>
+                    <Ionicons
+                      name="refresh"
+                      size={20}
+                      color={darkMode ? '#94a3b8' : '#64748b'}
+                    />
+                  </Pressable>
+                )}
+              </View>
+
+              {loadingInsight ? (
+                <View style={styles.insightLoadingContainer}>
+                  <ActivityIndicator size="small" color="#9333ea" />
+                  <Text style={[styles.insightLoadingText, darkMode && styles.textDark]}>
+                    Analyzing your health data...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.insightText, darkMode && styles.textDark]}>
+                  {aiInsight}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Manual Inputs */}
           <View style={[styles.section, darkMode && styles.sectionDark]}>
             <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Manual Tracking</Text>
@@ -347,6 +463,62 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     padding: 24,
+  },
+  insightCard: {
+    backgroundColor: '#faf5ff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  insightCardDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  insightHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f3e8ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  insightText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#475569',
+  },
+  insightLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  insightLoadingText: {
+    fontSize: 14,
+    color: '#64748b',
   },
   section: {
     marginBottom: 24,
