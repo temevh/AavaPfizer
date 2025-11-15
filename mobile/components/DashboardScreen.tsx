@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -24,13 +25,14 @@ interface DashboardScreenProps {
 }
 
 const { width } = Dimensions.get('window');
-const maxWidth = Math.min(width - 48, 448);
+const maxWidth = Math.min(width, 448);
 
 interface MetricProps {
   iconName: keyof typeof Ionicons.glyphMap;
   label: string;
-  value: number; // 0 to 1
+  value: number; // value between 0 and 1
   unit?: string;
+  editable?: boolean;
 }
 
 function StatusIndicator({ value }: { value: number }) {
@@ -72,7 +74,7 @@ function StatusIndicator({ value }: { value: number }) {
   );
 }
 
-function MetricCard({ iconName, label, value, unit }: MetricProps) {
+function MetricCard({ iconName, label, value, unit, editable = false }: MetricProps) {
   return (
     <View style={styles.metricCard}>
       <View style={styles.metricHeader}>
@@ -90,11 +92,52 @@ function MetricCard({ iconName, label, value, unit }: MetricProps) {
 }
 
 export function DashboardScreen({ navigation }: DashboardScreenProps) {
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
+  const [mealsCount, setMealsCount] = useState(3);
+  const [waterCount, setWaterCount] = useState(6);
+  const [alcoholCount, setAlcoholCount] = useState(0);
+
+  const handleEditMetric = (type: 'meals' | 'hydration' | 'alcohol') => {
+    setTrackingType(type);
+    setShowTrackingModal(true);
+  };
+
+  const handleIncrement = () => {
+    if (trackingType === 'meals') setMealsCount(prev => prev + 1);
+    else if (trackingType === 'hydration') setWaterCount(prev => prev + 1);
+    else setAlcoholCount(prev => prev + 1);
+  };
+
+  const handleDecrement = () => {
+    if (trackingType === 'meals') setMealsCount(prev => Math.max(0, prev - 1));
+    else if (trackingType === 'hydration') setWaterCount(prev => Math.max(0, prev - 1));
+    else setAlcoholCount(prev => Math.max(0, prev - 1));
+  };
+
+  const getCurrentCount = () => {
+    if (trackingType === 'meals') return mealsCount;
+    if (trackingType === 'hydration') return waterCount;
+    return alcoholCount;
+  };
+
+  const getTrackingTitle = () => {
+    if (trackingType === 'meals') return 'Log Meals';
+    if (trackingType === 'hydration') return 'Log Water';
+    return 'Log Alcohol';
+  };
+
+  const getTrackingUnit = () => {
+    if (trackingType === 'meals') return 'meals';
+    if (trackingType === 'hydration') return 'glasses';
+    return 'units';
+  };
+
   // Mock data - values from 0 to 1
   const manualMetrics: MetricProps[] = [
-    { iconName: 'restaurant', label: 'Meals', value: 0.8, unit: '3 meals today' },
-    { iconName: 'water', label: 'Hydration', value: 0.6, unit: '6 glasses' },
-    { iconName: 'wine', label: 'Alcohol', value: 1.0, unit: 'None today' },
+    { iconName: 'restaurant', label: 'Meals', value: mealsCount / 5, unit: `${mealsCount} meals today` },
+    { iconName: 'water', label: 'Hydration', value: waterCount / 10, unit: `${waterCount} glasses` },
+    { iconName: 'wine', label: 'Alcohol', value: alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5)), unit: alcoholCount === 0 ? 'None today' : `${alcoholCount} units` },
   ];
 
   const deviceMetrics: MetricProps[] = [
@@ -134,9 +177,18 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           {/* Manual Inputs */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Manual Tracking</Text>
+            <Text style={styles.sectionSubtitle}>Tap a metric to log your data</Text>
             <View style={styles.metricsList}>
               {manualMetrics.map((metric, index) => (
-                <MetricCard key={index} {...metric} />
+                <Pressable
+                  key={index}
+                  onPress={() => handleEditMetric(
+                    metric.label === 'Meals' ? 'meals' : 
+                    metric.label === 'Hydration' ? 'hydration' : 'alcohol'
+                  )}
+                >
+                  <MetricCard {...metric} editable={true} />
+                </Pressable>
               ))}
             </View>
           </View>
@@ -144,6 +196,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           {/* Device Collected */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Device Data</Text>
+            <Text style={styles.sectionSubtitle}>Data gathered by your device(s)</Text>
             <View style={styles.metricsList}>
               {deviceMetrics.map((metric, index) => (
                 <MetricCard key={index} {...metric} />
@@ -154,6 +207,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           {/* External Sources */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>External Sources</Text>
+            <Text style={styles.sectionSubtitle}>Data from connected apps</Text>
             <View style={styles.metricsList}>
               {externalMetrics.map((metric, index) => (
                 <MetricCard key={index} {...metric} />
@@ -162,6 +216,56 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Tracking Modal */}
+      <Modal
+        visible={showTrackingModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTrackingModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{getTrackingTitle()}</Text>
+              <Pressable onPress={() => setShowTrackingModal(false)}>
+                <Ionicons name="close" size={36} color="#475569" />
+              </Pressable>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <Text style={styles.modalLabel}>Today&apos;s count</Text>
+              <View style={styles.counterContainer}>
+                <Pressable
+                  onPress={handleDecrement}
+                  style={styles.counterButton}
+                >
+                  <Ionicons name="remove-circle" size={80} color="#f43f5e" />
+                </Pressable>
+                
+                <View style={styles.counterDisplay}>
+                  <Text style={styles.counterValue}>{getCurrentCount()}</Text>
+                  <Text style={styles.counterUnit}>{getTrackingUnit()}</Text>
+                </View>
+                
+                <Pressable
+                  onPress={handleIncrement}
+                  style={styles.counterButton}
+                >
+                  <Ionicons name="add-circle" size={80} color="#10b981" />
+                </Pressable>
+              </View>
+            </View>
+            
+            <Pressable
+              onPress={() => setShowTrackingModal(false)}
+              style={styles.modalSaveButton}
+            >
+              <Text style={styles.modalSaveText}>Save</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -217,13 +321,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '500',
     color: '#334155',
-    marginBottom: 12,
+    marginBottom: 6,
+  },
+  sectionSubtitle: {
+    fontSize: 18,
+    color: '#64748b',
+    marginBottom: 16,
   },
   metricsList: {
-    gap: 12,
+    gap: 6,
   },
   metricCard: {
     backgroundColor: '#fff',
@@ -236,12 +345,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   metricHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   metricIconContainer: {
     width: 40,
@@ -255,19 +367,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   metricLabel: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '500',
     color: '#334155',
     marginBottom: 4,
   },
   metricUnit: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#94a3b8',
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
   },
   statusBars: {
     flexDirection: 'row',
@@ -281,5 +393,73 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 12,
     color: '#475569',
+    textAlign: 'right',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: '500',
+    color: '#1e293b',
+  },
+  modalBody: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  modalLabel: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 24,
+  },
+  counterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 32,
+  },
+  counterButton: {
+    padding: 8,
+  },
+  counterDisplay: {
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  counterValue: {
+    fontSize: 64,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  counterUnit: {
+    fontSize: 16,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  modalSaveButton: {
+    marginHorizontal: 20,
+    backgroundColor: '#9333ea',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
