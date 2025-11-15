@@ -196,12 +196,12 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
 
           {/* Device Collected */}
           {deviceMetrics.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Device Data</Text>
-              <Text style={styles.sectionSubtitle}>Data gathered by your device(s)</Text>
+            <View style={[styles.section, darkMode && styles.sectionDark]}>
+              <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Device Data</Text>
+              <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data gathered by your device(s)</Text>
               <View style={styles.metricsList}>
                 {deviceMetrics.map((metric, index) => (
-                  <MetricCard key={index} {...metric} />
+                  <MetricCard key={index} {...metric} darkMode={darkMode} />
                 ))}
               </View>
             </View>
@@ -209,12 +209,12 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
 
           {/* External Sources */}
           {externalMetrics.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>External Sources</Text>
-              <Text style={styles.sectionSubtitle}>Data from connected apps</Text>
+            <View style={[styles.section, darkMode && styles.sectionDark]}>
+              <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>External Sources</Text>
+              <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>Data from connected apps</Text>
               <View style={styles.metricsList}>
                 {externalMetrics.map((metric, index) => (
-                  <MetricCard key={index} {...metric} />
+                  <MetricCard key={index} {...metric} darkMode={darkMode} />
                 ))}
               </View>
             </View>
@@ -230,16 +230,16 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
         onRequestClose={() => setShowTrackingModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{getTrackingTitle()}</Text>
+          <View style={[styles.modalContent, darkMode && styles.modalContentDark]}>
+            <View style={[styles.modalHeader, darkMode && styles.modalHeaderDark]}>
+              <Text style={[styles.modalTitle, darkMode && styles.modalTitleDark]}>{getTrackingTitle()}</Text>
               <Pressable onPress={() => setShowTrackingModal(false)}>
-                <Ionicons name="close" size={36} color="#475569" />
+                <Ionicons name="close" size={36} color={darkMode ? '#94a3b8' : '#475569'} />
               </Pressable>
             </View>
             
             <View style={styles.modalBody}>
-              <Text style={styles.modalLabel}>Today&apos;s count</Text>
+              <Text style={[styles.modalLabel, darkMode && styles.modalLabelDark]}>Today&apos;s count</Text>
               <View style={styles.counterContainer}>
                 <Pressable
                   onPress={handleDecrement}
@@ -249,8 +249,8 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
                 </Pressable>
                 
                 <View style={styles.counterDisplay}>
-                  <Text style={styles.counterValue}>{getCurrentCount()}</Text>
-                  <Text style={styles.counterUnit}>{getTrackingUnit()}</Text>
+                  <Text style={[styles.counterValue, darkMode && styles.counterValueDark]}>{getCurrentCount()}</Text>
+                  <Text style={[styles.counterUnit, darkMode && styles.counterUnitDark]}>{getTrackingUnit()}</Text>
                 </View>
                 
                 <Pressable
@@ -420,6 +420,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingBottom: 32,
   },
+  modalContentDark: {
+    backgroundColor: '#1e293b',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -428,10 +431,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
+  modalHeaderDark: {
+    borderBottomColor: '#334155',
+  },
   modalTitle: {
     fontSize: 28,
     fontWeight: '500',
     color: '#1e293b',
+  },
+  modalTitleDark: {
+    color: '#e2e8f0',
   },
   modalBody: {
     padding: 32,
@@ -441,6 +450,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
     marginBottom: 24,
+  },
+  modalLabelDark: {
+    color: '#94a3b8',
   },
   counterContainer: {
     flexDirection: 'row',
@@ -459,10 +471,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1e293b',
   },
+  counterValueDark: {
+    color: '#e2e8f0',
+  },
   counterUnit: {
     fontSize: 16,
     color: '#64748b',
     marginTop: 4,
+  },
+  counterUnitDark: {
+    color: '#94a3b8',
   },
   modalSaveButton: {
     marginHorizontal: 20,
