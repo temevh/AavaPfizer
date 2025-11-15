@@ -31,6 +31,8 @@ interface DiaryEntry {
 export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newEntryContent, setNewEntryContent] = useState('');
+  const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { darkMode } = useTheme();
   const [entries, setEntries] = useState<DiaryEntry[]>([
     {
@@ -66,14 +68,47 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
 
   const handleAddEntry = () => {
     if (newEntryContent.trim()) {
-      const newEntry: DiaryEntry = {
-        id: Date.now().toString(),
-        date: new Date(),
-        content: newEntryContent.trim(),
-      };
-      setEntries([newEntry, ...entries]);
+      if (editingEntry) {
+        // Update existing entry
+        setEntries(entries.map(entry => 
+          entry.id === editingEntry.id 
+            ? { ...entry, content: newEntryContent.trim() }
+            : entry
+        ));
+        setEditingEntry(null);
+      } else {
+        // Add new entry
+        const newEntry: DiaryEntry = {
+          id: Date.now().toString(),
+          date: new Date(),
+          content: newEntryContent.trim(),
+        };
+        setEntries([newEntry, ...entries]);
+      }
       setNewEntryContent('');
       setShowAddEntry(false);
+    }
+  };
+
+  const handleEditEntry = (entry: DiaryEntry) => {
+    setEditingEntry(entry);
+    setNewEntryContent(entry.content);
+    setShowAddEntry(true);
+  };
+
+  const handleCancel = () => {
+    setShowAddEntry(false);
+    setEditingEntry(null);
+    setNewEntryContent('');
+  };
+
+  const handleDeleteEntry = () => {
+    if (editingEntry) {
+      setEntries(entries.filter(entry => entry.id !== editingEntry.id));
+      setShowDeleteConfirm(false);
+      setShowAddEntry(false);
+      setEditingEntry(null);
+      setNewEntryContent('');
     }
   };
 
@@ -81,16 +116,23 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
     return (
       <View style={[styles.container, darkMode && styles.containerDark]}>
         <NavigationBar
-          title="New Diary Entry"
-          subtitle={new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          title={editingEntry ? "Edit Diary Entry" : "New Diary Entry"}
+          subtitle={editingEntry 
+            ? editingEntry.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          }
           showBackButton={false}
         />
         <View style={styles.addHeader}>
           <Pressable
-            onPress={() => setShowAddEntry(false)}
-            style={styles.cancelButton}
+            onPress={handleCancel}
+            style={({ pressed }) => [
+              styles.cancelButton,
+              darkMode && styles.cancelButtonDark,
+              pressed && styles.cancelButtonPressed,
+            ]}
           >
-            <Ionicons name="close" size={24} color={darkMode ? '#94a3b8' : '#475569'} />
+            <Ionicons name="close" size={20} color={darkMode ? '#e2e8f0' : '#1e293b'} />
             <Text style={[styles.backText, darkMode && styles.backTextDark]}>Cancel</Text>
           </Pressable>
         </View>
@@ -122,10 +164,54 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
                 !newEntryContent.trim() && styles.saveButtonTextDisabled,
               ]}
             >
-              Save Entry
+              {editingEntry ? "Update Entry" : "Save Entry"}
             </Text>
           </Pressable>
+
+          {editingEntry && (
+            <Pressable
+              onPress={() => setShowDeleteConfirm(true)}
+              style={styles.deleteButton}
+            >
+              <Ionicons name="trash" size={20} color="#dc2626" />
+              <Text style={styles.deleteButtonText}>Delete Entry</Text>
+            </Pressable>
+          )}
         </View>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          visible={showDeleteConfirm}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteConfirm(false)}
+        >
+          <View style={styles.confirmOverlay}>
+            <View style={[styles.confirmDialog, darkMode && styles.confirmDialogDark]}>
+              <Ionicons name="warning" size={48} color="#dc2626" style={styles.confirmIcon} />
+              <Text style={[styles.confirmTitle, darkMode && styles.confirmTitleDark]}>Delete Entry?</Text>
+              <Text style={[styles.confirmMessage, darkMode && styles.confirmMessageDark]}>
+                This action cannot be undone. Are you sure you want to delete this diary entry?
+              </Text>
+              
+              <View style={styles.confirmButtons}>
+                <Pressable
+                  onPress={() => setShowDeleteConfirm(false)}
+                  style={[styles.confirmButton, styles.cancelConfirmButton]}
+                >
+                  <Text style={styles.cancelConfirmText}>Cancel</Text>
+                </Pressable>
+                
+                <Pressable
+                  onPress={handleDeleteEntry}
+                  style={[styles.confirmButton, styles.deleteConfirmButton]}
+                >
+                  <Text style={styles.deleteConfirmText}>Delete</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -152,15 +238,23 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
           ) : (
             <View style={styles.entriesList}>
               {entries.map((entry) => (
-                <View key={entry.id} style={[styles.entryCard, darkMode && styles.entryCardDark]}>
+                <Pressable
+                  key={entry.id}
+                  onPress={() => handleEditEntry(entry)}
+                  style={({ pressed }) => [
+                    styles.entryCard,
+                    darkMode && styles.entryCardDark,
+                    pressed && styles.entryCardPressed,
+                  ]}
+                >
                   <View style={styles.entryHeader}>
                     <Text style={[styles.entryDate, darkMode && styles.entryDateDark]}>{formatDate(entry.date)}</Text>
-                    <Text style={styles.entryTime}>
+                    <Text style={[styles.entryTime, darkMode && styles.entryTimeDark]}>
                       {entry.date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                   </View>
                   <Text style={[styles.entryContent, darkMode && styles.textDark]}>{entry.content}</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           )}
@@ -201,11 +295,32 @@ const styles = StyleSheet.create({
   cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    alignSelf: 'flex-start',
+  },
+  cancelButtonDark: {
+    backgroundColor: '#334155',
+    borderColor: '#475569',
+  },
+  cancelButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   backText: {
-    fontSize: 16,
-    color: '#475569',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1e293b',
   },
   backTextDark: {
     color: '#94a3b8',
@@ -274,6 +389,92 @@ const styles = StyleSheet.create({
   saveButtonTextDisabled: {
     color: '#94a3b8',
   },
+  deleteButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#dc2626',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 12,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#dc2626',
+  },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  confirmDialog: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  confirmDialogDark: {
+    backgroundColor: '#1e293b',
+  },
+  confirmIcon: {
+    marginBottom: 16,
+  },
+  confirmTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmTitleDark: {
+    color: '#e2e8f0',
+  },
+  confirmMessage: {
+    fontSize: 16,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  confirmMessageDark: {
+    color: '#94a3b8',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelConfirmButton: {
+    backgroundColor: '#e2e8f0',
+  },
+  cancelConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  deleteConfirmButton: {
+    backgroundColor: '#dc2626',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 48,
@@ -313,6 +514,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
     borderColor: '#334155',
   },
+  entryCardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.99 }],
+  },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -330,6 +535,9 @@ const styles = StyleSheet.create({
   entryTime: {
     fontSize: 14,
     color: '#94a3b8',
+  },
+  entryTimeDark: {
+    color: '#64748b',
   },
   entryContent: {
     fontSize: 16,
