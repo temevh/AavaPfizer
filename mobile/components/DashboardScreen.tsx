@@ -7,16 +7,17 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  Button
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { OnboardingScreen } from './OnboardingScreen';
 
 type RootStackParamList = {
   Dashboard: undefined;
   // add other routes here if needed, e.g.:
   // OtherScreen?: { id: string };
 };
-
-import { Ionicons } from '@expo/vector-icons';
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
@@ -93,6 +94,7 @@ function MetricCard({ iconName, label, value, unit, editable = false }: MetricPr
 
 export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
   const [mealsCount, setMealsCount] = useState(3);
   const [waterCount, setWaterCount] = useState(6);
@@ -161,13 +163,21 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
         {/* Header */}
         <View style={styles.header}>
           <View style={[styles.headerContent, { maxWidth }]}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color="#475569" />
-              <Text style={styles.backText}>Back</Text>
-            </Pressable>
+            <View style={styles.headerTop}>
+              <Pressable
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <Ionicons name="arrow-back" size={20} color="#475569" />
+                <Text style={styles.backText}>Back</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowOnboarding(true)}
+                style={styles.settingsButton}
+              >
+                <Ionicons name="settings-outline" size={24} color="#475569" />
+              </Pressable>
+            </View>
             <Text style={styles.headerTitle}>Dashboard</Text>
             <Text style={styles.headerSubtitle}> health metrics</Text>
           </View>
@@ -266,6 +276,15 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
           </View>
         </View>
       </Modal>
+
+      {/* Onboarding Modal */}
+      <Modal
+        visible={showOnboarding}
+        animationType="slide"
+        onRequestClose={() => setShowOnboarding(false)}
+      >
+        <OnboardingScreen onComplete={() => setShowOnboarding(false)} />
+      </Modal>
     </View>
   );
 }
@@ -292,11 +311,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: 24,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+  },
+  settingsButton: {
+    padding: 8,
   },
   backText: {
     fontSize: 16,
