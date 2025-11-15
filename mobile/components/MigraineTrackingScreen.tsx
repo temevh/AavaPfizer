@@ -9,18 +9,15 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-
-type RootStackParamList = {
-  Tracking: undefined;
-  Main: undefined;
-};
-
-type MigraineTrackingScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tracking'>;
+import { NavigationBar } from './NavigationBar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface MigraineTrackingScreenProps {
-  navigation: MigraineTrackingScreenNavigationProp;
+  navigation: {
+    goBack: () => void;
+    navigate: (route: string) => void;
+  };
 }
 
 const { width } = Dimensions.get('window');
@@ -44,8 +41,8 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
+  const { darkMode } = useTheme();
 
   const symptoms = [
     'Aura',
@@ -98,38 +95,12 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
+      <NavigationBar
+        title="Log Migraine"
+        subtitle="Quick and simple"
+        showBackButton={true}
+      />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={[styles.header, darkMode && styles.headerDark]}>
-          <View style={[styles.headerContent, { maxWidth }]}>
-            <View style={styles.headerTop}>
-              <Pressable
-                onPress={() => navigation.goBack()}
-                style={styles.backButton}
-              >
-                <Ionicons name="arrow-back" size={24} color={darkMode ? '#94a3b8' : '#475569'} />
-                <Text style={[styles.backText, darkMode && styles.textDark]}>Back</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setDarkMode(!darkMode)}
-                style={styles.darkModeButton}
-              >
-                <Ionicons 
-                  name={darkMode ? 'sunny' : 'moon'} 
-                  size={24} 
-                  color={darkMode ? '#fbbf24' : '#475569'} 
-                />
-                <Text style={[styles.darkModeText, darkMode && styles.textDark]}>
-                  {darkMode ? 'Light' : 'Dark'}
-                </Text>
-              </Pressable>
-            </View>
-            <Text style={[styles.headerTitle, darkMode && styles.textDark]}>Log Migraine</Text>
-            <Text style={[styles.headerSubtitle, darkMode && styles.textDark]}>Quick and simple</Text>
-          </View> 
-        </View>
-
-        
         <View style={[styles.content, { maxWidth }]}>
           {/* Quick Intensity */}
           <View style={[styles.section, darkMode && styles.sectionDark]}>
@@ -305,60 +276,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
-  },
-  header: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingTop: 8,
-  },
-  headerDark: {
-    backgroundColor: '#1e293b',
-    borderBottomColor: '#334155',
-  },
-  headerContent: {
-    width: '100%',
-    alignSelf: 'center',
-    padding: 16,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    padding: 4,
-    minWidth: 70,
-    minHeight: 40,
-  },
-  backText: {
-    fontSize: 16,
-    color: '#475569',
-  },
-  darkModeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    padding: 4,
-    minHeight: 40,
-  },
-  darkModeText: {
-    fontSize: 16,
-    color: '#475569',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
   },
   content: {
     width: '100%',

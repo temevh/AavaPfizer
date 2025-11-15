@@ -7,17 +7,14 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-
-type RootStackParamList = {
-  Patterns: undefined;
-};
-
-type PatternDetectionScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Patterns'>;
+import { NavigationBar } from './NavigationBar';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface PatternDetectionScreenProps {
-  navigation: PatternDetectionScreenNavigationProp;
+  navigation: {
+    goBack: () => void;
+  };
 }
 
 const { width } = Dimensions.get('window');
@@ -28,10 +25,11 @@ interface PatternProps {
   title: string;
   description: string;
   confidence: number;
+  darkMode?: boolean;
   isHighConfidence?: boolean;
 }
 
-function PatternCard({ type, title, description, confidence, isHighConfidence }: PatternProps) {
+function PatternCard({ type, title, description, confidence, darkMode, isHighConfidence }: PatternProps) {
   const getIcon = () => {
     switch (type) {
       case 'positive':
@@ -46,6 +44,10 @@ function PatternCard({ type, title, description, confidence, isHighConfidence }:
   };
 
   const getBgColor = () => {
+    if (darkMode) {
+      // Use consistent dark mode colors
+      return { bg: '#1e293b', border: '#334155' };
+    }
     switch (type) {
       case 'positive':
         return { bg: '#ecfdf5', border: '#d1fae5' };
@@ -72,10 +74,10 @@ function PatternCard({ type, title, description, confidence, isHighConfidence }:
           {getIcon()}
         </View>
         <View style={styles.patternTextContainer}>
-          <Text style={styles.patternTitle}>{title}</Text>
-          <Text style={styles.patternDescription}>{description}</Text>
+          <Text style={[styles.patternTitle, darkMode && styles.patternTitleDark]}>{title}</Text>
+          <Text style={[styles.patternDescription, darkMode && styles.patternDescriptionDark]}>{description}</Text>
           <View style={styles.confidenceContainer}>
-            <View style={styles.confidenceBarContainer}>
+            <View style={[styles.confidenceBarContainer, darkMode && styles.confidenceBarContainerDark]}>
               <View
                 style={[
                   styles.confidenceBar,
@@ -84,7 +86,11 @@ function PatternCard({ type, title, description, confidence, isHighConfidence }:
                 ]}
               />
             </View>
-            <Text style={[styles.confidenceText, isHighConfidence && styles.highConfidenceText]}>
+            <Text style={[
+              styles.confidenceText,
+              darkMode && styles.confidenceTextDark,
+              isHighConfidence && styles.highConfidenceText
+            ]}>
               {confidence}% confidence
             </Text>
           </View>
@@ -95,6 +101,8 @@ function PatternCard({ type, title, description, confidence, isHighConfidence }:
 }
 
 export function PatternDetectionScreen({ navigation }: PatternDetectionScreenProps) {
+  const { darkMode } = useTheme();
+  
   const patterns: PatternProps[] = [
     {
       type: 'negative',
@@ -147,29 +155,16 @@ export function PatternDetectionScreen({ navigation }: PatternDetectionScreenPro
   ];
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={[styles.headerContent, { maxWidth }]}>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color="#475569" />
-              <Text style={styles.backText}>Back</Text>
-            </Pressable>
-            <View style={styles.headerTitleRow}>
-              <Ionicons name="trending-up" size={24} color="#f59e0b" />
-              <Text style={styles.headerTitle}>Pattern Detection</Text>
-            </View>
-            <Text style={styles.headerSubtitle}>AI-detected correlations and insights</Text>
-          </View>
-        </View>
-
-        <View style={[styles.content, { maxWidth }]}>
+    <View style={[styles.container, darkMode && styles.containerDark]}>
+      <NavigationBar
+        title="Pattern Detection"
+        subtitle="AI-detected correlations and insights"
+        showBackButton={true}
+      />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}><View style={[styles.content, { maxWidth }]}>
           {/* Info Banner */}
-          <View style={styles.infoBanner}>
-            <Text style={styles.infoText}>
+          <View style={[styles.infoBanner, darkMode && styles.infoBannerDark]}>
+            <Text style={[styles.infoText, darkMode && styles.infoTextDark]}>
               These patterns are based on your tracked data over the past 30 days. Confidence levels indicate the strength of the correlation.
             </Text>
           </View>
@@ -182,14 +177,15 @@ export function PatternDetectionScreen({ navigation }: PatternDetectionScreenPro
                 <PatternCard 
                   key={index} 
                   {...pattern} 
+                  darkMode={darkMode}
                   isHighConfidence={pattern.confidence >= 80}
                 />
               ))}
           </View>
 
           {/* Footer Note */}
-          <View style={styles.footerNote}>
-            <Text style={styles.footerText}>
+          <View style={[styles.footerNote, darkMode && styles.footerNoteDark]}>
+            <Text style={[styles.footerText, darkMode && styles.footerTextDark]}>
               Patterns are for informational purposes only. Consult your healthcare provider for medical advice.
             </Text>
           </View>
@@ -204,47 +200,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  containerDark: {
+    backgroundColor: '#0f172a',
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 24,
-  },
-  header: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    paddingTop: 8,
-  },
-  headerContent: {
-    width: '100%',
-    alignSelf: 'center',
-    padding: 24,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  backText: {
-    fontSize: 16,
-    color: '#475569',
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: '#1e293b',
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#64748b',
   },
   content: {
     width: '100%',
@@ -259,10 +222,17 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 24,
   },
+  infoBannerDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
   infoText: {
     fontSize: 14,
     color: '#1e40af',
     lineHeight: 20,
+  },
+  infoTextDark: {
+    color: '#94a3b8',
   },
   patternsList: {
     gap: 16,
@@ -289,11 +259,17 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginBottom: 8,
   },
+  patternTitleDark: {
+    color: '#e2e8f0',
+  },
   patternDescription: {
     fontSize: 14,
     color: '#475569',
     lineHeight: 20,
     marginBottom: 12,
+  },
+  patternDescriptionDark: {
+    color: '#94a3b8',
   },
   confidenceContainer: {
     flexDirection: 'row',
@@ -307,6 +283,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
+  confidenceBarContainerDark: {
+    backgroundColor: '#0f172a',
+  },
   confidenceBar: {
     height: '100%',
     backgroundColor: '#64748b',
@@ -315,6 +294,9 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: 12,
     color: '#64748b',
+  },
+  confidenceTextDark: {
+    color: '#94a3b8',
   },
   highConfidenceCard: {
     borderWidth: 2,
@@ -356,10 +338,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
+  footerNoteDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
+  },
   footerText: {
     fontSize: 14,
     color: '#475569',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  footerTextDark: {
+    color: '#94a3b8',
+  },
+  textDark: {
+    color: '#e2e8f0',
   },
 });
