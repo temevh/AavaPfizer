@@ -23,7 +23,7 @@ interface DiaryEntriesScreenProps {
 }
 
 const { width } = Dimensions.get('window');
-const maxWidth = Math.min(width - 48, 448);
+const maxWidth = Math.min(width, 448);
 
 interface DiaryEntry {
   id: string;
@@ -145,18 +145,8 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
               <Ionicons name="arrow-back" size={20} color="#475569" />
               <Text style={styles.backText}>Back</Text>
             </Pressable>
-            <View style={styles.headerRow}>
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.headerTitle}>Diary</Text>
-                <Text style={styles.headerSubtitle}>Your personal journal</Text>
-              </View>
-              <Pressable
-                onPress={() => setShowAddEntry(true)}
-                style={styles.addButton}
-              >
-                <Ionicons name="add" size={24} color="#fff" />
-              </Pressable>
-            </View>
+            <Text style={styles.headerTitle}>Diary</Text>
+            <Text style={styles.headerSubtitle}>Your personal journal</Text>
           </View>
         </View>
 
@@ -188,6 +178,16 @@ export function DiaryEntriesScreen({ navigation }: DiaryEntriesScreenProps) {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Add Button */}
+      <View style={styles.fabContainer}>
+        <Pressable
+          onPress={() => setShowAddEntry(true)}
+          style={styles.fab}
+        >
+          <Ionicons name="add" size={32} color="#fff" />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -224,14 +224,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#475569',
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '500',
@@ -241,14 +233,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#64748b',
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     width: '100%',
@@ -341,5 +325,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#334155',
     lineHeight: 24,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    zIndex: 3,
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
