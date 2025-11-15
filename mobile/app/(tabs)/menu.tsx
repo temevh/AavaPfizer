@@ -16,6 +16,7 @@ const menuItems: MenuItem[] = [
   { icon: 'book', label: 'Diary', route: '/diary', color: '#2563eb', bgColor: '#dbeafe' },
   { icon: 'bar-chart', label: 'Dashboard', route: '/dashboard', color: '#10b981', bgColor: '#d1fae5' },
   { icon: 'trending-up', label: 'Patterns', route: '/patterns', color: '#f59e0b', bgColor: '#fef3c7' },
+  { icon: 'document', label: 'Export', route: '/export', color: '#dc2626', bgColor: '#fecaca' },
 ];
 
 export default function FloatingMenu() {
