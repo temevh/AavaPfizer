@@ -23,7 +23,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const submitData = () => {
     const userData = {
         name,
-        ageBracket,
+        ageBracket: (() => {
+          if (ageBracket.includes('-')) {
+            const [startStr, endStr] = ageBracket.split('-');
+            const start = parseInt(startStr, 10);
+            const end = parseInt(endStr, 10);
+            return (!isNaN(start) && !isNaN(end)) ? end - start : null;
+          }
+          const num = parseInt(ageBracket, 10);
+          return !isNaN(num) ? num : null;
+        })(),
         integrations: integrations.filter(i => i.enabled).map(i => i.id),
     };
     console.log("submitted data:", userData);
