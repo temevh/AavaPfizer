@@ -46,7 +46,7 @@ External Sources:
 - Calendar Stress: ${dashboardData?.calendar?.unit || 'Unknown'} (${dashboardData?.calendar?.status || 'Unknown'})
 - Weather Conditions: ${dashboardData?.weather?.unit || 'Unknown'} (${dashboardData?.weather?.status || 'Unknown'})
 
-Analyze these comprehensive metrics and give me 2-3 brief, personalized tips based on what might have contributed to this migraine and how to prevent the next one.`;
+Analyze these comprehensive metrics and give me 2-3 brief, personalized tips based on what might have contributed to this migraine and how to prevent the next one. Do not add bolding to the text.`;
 
   const response = await chat({ message: userMessage, system_prompt: systemPrompt });
   return response.response;

@@ -8,12 +8,9 @@ import {
   TextInput,
   Modal,
   Dimensions,
-<<<<<<< HEAD
   ActivityIndicator,
-=======
   PanResponder,
   Animated,
->>>>>>> origin/qol_juttui
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
@@ -211,10 +208,12 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
             {loadingInsights && (
               <View style={[styles.insightsLoadingContainer, darkMode && styles.insightsLoadingContainerDark]}>
                 <View style={styles.loadingIconWrapper}>
-                  <View style={[styles.loadingIconBackground, darkMode && styles.loadingIconBackgroundDark]}>
-                    <Ionicons name="sparkles" size={32} color="#9333ea" />
-                  </View>
-
+                  <ActivityIndicator 
+                    size="large" 
+                    color="#9333ea" 
+                    style={styles.loadingSpinner}
+                  />
+              
                 </View>
                 <Text style={[styles.insightsLoadingTitle, darkMode && styles.textDark]}>
                   Analyzing Your Data
@@ -222,11 +221,6 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
                 <Text style={[styles.insightsLoadingText, darkMode && styles.successSubtitleDark]}>
                   Our AI is generating personalized insights based on your migraine patterns...
                 </Text>
-                 <ActivityIndicator 
-                    size="large" 
-                    color="#9333ea" 
-                    style={styles.loadingSpinner}
-                  />
               </View>
             )}
 
