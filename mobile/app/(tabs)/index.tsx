@@ -6,9 +6,8 @@ import { useUser } from '@/contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
-import { scheduleTestNotification, sendImmediateNotification } from '@/utils/notifications';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
@@ -60,16 +59,18 @@ export default function HomeScreen() {
         />
 
         {/* Onboarding Button */}
-        <Pressable
+        {!userData?.integrations && (
+          <Pressable
           onPress={() => setShowOnboarding(true)}
           style={({ pressed }) => [
             styles.onboardingButton,
             pressed && styles.onboardingButtonPressed,
           ]}
-        >
+          >
           <Ionicons name="settings-outline" size={24} color="#9333ea" />
           <Text style={[styles.onboardingButtonText, darkMode && styles.onboardingButtonTextDark]}>Setup & Preferences</Text>
         </Pressable>
+        )}
       </View>
     </ScrollView>
     
