@@ -45,7 +45,7 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const [showNotes, setShowNotes] = useState(true);
 
   const symptoms = [
     'Aura',
@@ -68,6 +68,13 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
 
   const handleSubmit = () => {
     setShowSuccess(true);
+    const data = {
+      intensity: intensity,
+      symptoms: selectedSymptoms,
+      duration: duration,
+      notes: notes,
+    }
+    console.log('Migraine Log Submitted:', data);
     setTimeout(() => {
       navigation.navigate('Main');
     }, 1500);
@@ -206,13 +213,8 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
               style={styles.notesHeader}
             >
               <Text style={[styles.label, darkMode && styles.textDark]}>Notes (optional)</Text>
-              <Ionicons 
-                name={showNotes ? 'chevron-up' : 'chevron-down'} 
-                size={24} 
-                color={darkMode ? '#94a3b8' : '#64748b'} 
-              />
+
             </Pressable>
-            {showNotes && (
               <TextInput
                 style={[styles.notesInput, darkMode && styles.notesInputDark]}
                 placeholder="Any other details..."
@@ -223,7 +225,6 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
                 onChangeText={setNotes}
                 textAlignVertical="top"
               />
-            )}
           </View>
 
           {/* Submit Button */}
@@ -478,14 +479,16 @@ const styles = StyleSheet.create({
   symptomButtonSelected: {
     borderColor: '#9333ea',
     backgroundColor: '#faf5ff',
+    fontWeight: '700',
   },
   symptomButtonSelectedDark: {
     borderColor: '#7e22ce',
     backgroundColor: '#7e22ce',
   },
   symptomText: {
-    fontSize: 20,
-    fontWeight: '400',
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '500',
     color: '#000000ff',
   },
   symptomTextSelected: {

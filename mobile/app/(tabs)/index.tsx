@@ -8,14 +8,18 @@ const maxWidth = Math.min(width - 48, 448);
 
 export default function HomeScreen() {
   const router = useRouter();
+  
+  const user = {
+    name: "Alex"
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={[styles.content, { maxWidth }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>MigraGuard</Text>
-          <Text style={styles.subtitle}>Your migraine companion</Text>
+          <Text style={styles.title}>Hello {user.name}</Text>
+          <Text style={styles.subtitle}>How are we feeling today?</Text>
         </View>
 
         {/* Emergency Button */}
@@ -118,13 +122,13 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '500',
+    fontSize: 32,
+    fontWeight: '700',
     color: '#334155',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 20,
     color: '#64748b',
   },
   emergencyButton: {
