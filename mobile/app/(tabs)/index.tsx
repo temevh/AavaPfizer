@@ -5,7 +5,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
 
 const { width } = Dimensions.get('window');
@@ -34,7 +34,8 @@ export default function HomeScreen() {
 
           {/* Emergency Button */}
         <Pressable
-          onPress={() => router.push('/emergency')}
+          onLongPress={() => router.push('/emergency')}
+          delayLongPress={500}
           style={({ pressed }) => [
             styles.emergencyButton,
             pressed && styles.emergencyButtonPressed,
@@ -42,7 +43,7 @@ export default function HomeScreen() {
         >
           <Ionicons name="alert-circle" size={64} color="#fff" style={styles.emergencyIcon} />
           <Text style={styles.emergencyText}>Emergency Help</Text>
-          <Text style={styles.emergencySubtext}>Tap for immediate migraine relief tips</Text>
+          <Text style={styles.emergencySubtext}>Press and hold for immediate migraine relief tips</Text>
         </Pressable>
 
         {/* Onboarding Button */}
@@ -134,14 +135,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emergencyText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '500',
     color: '#fff',
     marginBottom: 8,
   },
   emergencySubtext: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#fecdd3',
+    textAlign: 'center',
+    paddingHorizontal: 16,
   },
   onboardingButton: {
     flexDirection: 'row',

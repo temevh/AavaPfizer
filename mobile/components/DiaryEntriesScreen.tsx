@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  Modal,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
