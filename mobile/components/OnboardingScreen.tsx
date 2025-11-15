@@ -176,7 +176,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             <View style={styles.logoContainer}>
               <Ionicons name="pulse" size={40} color="#fff" />
             </View>
-            <Text style={styles.title}>Welcome to PreGraine</Text>
+            <Text style={styles.title}>Welcome to MyGraine</Text>
             <Text style={styles.subtitle}>
               Your personal companion for migraine prevention and management
             </Text>
@@ -427,7 +427,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {/* Message */}
         <Text style={styles.step3Title}>You're All Set, {name}!</Text>
         <Text style={styles.step3Subtitle}>
-          PreGraine is now configured and ready to help you track and prevent migraines.
+          MyGraine is now configured and ready to help you track and prevent migraines.
         </Text>
 
         {/* Summary */}
