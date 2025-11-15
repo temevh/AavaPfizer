@@ -7,10 +7,12 @@ import {
   ScrollView,
   TextInput,
   Dimensions,
+  Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+
 
 interface DiaryEntriesScreenProps {
   navigation: {
