@@ -1,11 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={[styles.content, { maxWidth }]}>
@@ -31,7 +34,7 @@ export default function HomeScreen() {
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Pressable
-            onPress={() => Alert.alert('Log Migraine', 'Tracking feature coming soon')}
+            onPress={() => router.push('/migraine')}
             style={({ pressed }) => [
               styles.actionButton,
               pressed && styles.actionButtonPressed,
@@ -47,7 +50,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => Alert.alert('Diary Entry', 'Diary feature coming soon')}
+            onPress={() => router.push('/diary')}
             style={({ pressed }) => [
               styles.actionButton,
               pressed && styles.actionButtonPressed,
@@ -66,7 +69,7 @@ export default function HomeScreen() {
         {/* Navigation Cards */}
         <View style={styles.navCards}>
           <Pressable
-            onPress={() => Alert.alert('Dashboard', 'Dashboard feature coming soon')}
+            onPress={() => router.push('/dashboard')}
             style={({ pressed }) => [
               styles.navCard,
               pressed && styles.navCardPressed,
@@ -79,7 +82,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => Alert.alert('Patterns', 'Pattern detection coming soon')}
+            onPress={() => router.push('/patterns')}
             style={({ pressed }) => [
               styles.navCard,
               pressed && styles.navCardPressed,

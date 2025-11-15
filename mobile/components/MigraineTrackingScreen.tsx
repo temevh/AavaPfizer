@@ -10,10 +10,12 @@ import {
   Dimensions,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
 import { Ionicons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
-import { LinearGradient } from 'expo-linear-gradient';
+
+type RootStackParamList = {
+  Tracking: undefined;
+  Main: undefined;
+};
 
 type MigraineTrackingScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Tracking'>;
 
@@ -103,31 +105,9 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
           </View>
         </View>
 
+        
         <View style={[styles.content, { maxWidth }]}>
-          {/* Pain Intensity */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Pain Intensity</Text>
-            <View style={styles.intensityContainer}>
-              <Slider
-                style={styles.slider}
-                minimumValue={1}
-                maximumValue={10}
-                step={1}
-                value={intensity}
-                onValueChange={setIntensity}
-                minimumTrackTintColor="#9333ea"
-                maximumTrackTintColor="#e2e8f0"
-                thumbTintColor="#9333ea"
-              />
-              <View style={styles.intensityLabels}>
-                <Text style={styles.intensityLabel}>Mild</Text>
-                <View style={styles.intensityDisplay}>
-                  <Text style={styles.intensityValue}>{intensity}</Text>
-                </View>
-                <Text style={styles.intensityLabel}>Severe</Text>
-              </View>
-            </View>
-          </View>
+          
 
           {/* Symptoms */}
           <View style={styles.section}>
@@ -192,14 +172,7 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
             onPress={handleSubmit}
             style={styles.submitButton}
           >
-            <LinearGradient
-              colors={['#9333ea', '#7e22ce']}
-              style={styles.submitGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
               <Text style={styles.submitText}>Save Migraine Log</Text>
-            </LinearGradient>
           </Pressable>
         </View>
       </ScrollView>

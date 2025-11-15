@@ -10,8 +10,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
 import { Ionicons } from '@expo/vector-icons';
+
+type RootStackParamList = {
+  Diary: undefined;
+};
 
 type DiaryEntriesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Diary'>;
 
