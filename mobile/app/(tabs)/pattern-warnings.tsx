@@ -4,17 +4,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from '@/components/NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDashboardStatus } from '@/hooks/useDashboardStatus';
+import { useUser } from '@/contexts/UserContext';
 
 interface WarningItemProps {
   iconName: keyof typeof Ionicons.glyphMap;
   title: string;
-  status: 'Critical' | 'Poor';
+  status: 'Critical' | 'Poor' | 'Fair' | 'Good' | 'Excellent';
   unit: string;
   darkMode?: boolean;
 }
 
 function WarningItem({ iconName, title, status, unit, darkMode }: WarningItemProps) {
-  const statusColor = status === 'Critical' ? '#ef4444' : '#f97316';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Critical': return '#ef4444';
+      case 'Poor': return '#f97316';
+      case 'Fair': return '#eab308';
+      case 'Good': return '#84cc16';
+      case 'Excellent': return '#10b981';
+      default: return '#64748b';
+    }
+  };
+  
+  const statusColor = getStatusColor(status);
   
   return (
     <View style={[styles.warningItem, darkMode && styles.warningItemDark]}>
@@ -38,10 +50,11 @@ export default function PatternWarningsScreen() {
   const { darkMode } = useTheme();
   const dashboardStatus = useDashboardStatus();
 
-  // Collect all critical/poor items
+  // Collect all metrics from the hook
   const warnings = [];
   
-  if (dashboardStatus.meals && (dashboardStatus.meals.status === 'Critical' || dashboardStatus.meals.status === 'Poor')) {
+  // Manual metrics (if available)
+  if (dashboardStatus.meals) {
     warnings.push({
       iconName: 'restaurant' as keyof typeof Ionicons.glyphMap,
       title: 'Meals',
@@ -50,7 +63,7 @@ export default function PatternWarningsScreen() {
     });
   }
 
-  if (dashboardStatus.hydration && (dashboardStatus.hydration.status === 'Critical' || dashboardStatus.hydration.status === 'Poor')) {
+  if (dashboardStatus.hydration) {
     warnings.push({
       iconName: 'water' as keyof typeof Ionicons.glyphMap,
       title: 'Hydration',
@@ -59,21 +72,42 @@ export default function PatternWarningsScreen() {
     });
   }
 
-  if (dashboardStatus.alcohol && (dashboardStatus.alcohol.status === 'Critical' || dashboardStatus.alcohol.status === 'Poor')) {
+  if (dashboardStatus.alcohol) {
     warnings.push({
       iconName: 'wine' as keyof typeof Ionicons.glyphMap,
-      title: 'Alcohol Consumption',
+      title: 'Alcohol',
       status: dashboardStatus.alcohol.status,
       unit: dashboardStatus.alcohol.unit
     });
   }
 
-  // Sort warnings by priority: Critical first, then Poor
-  const sortedWarnings = warnings.sort((a, b) => {
-    if (a.status === 'Critical' && b.status === 'Poor') return -1;
-    if (a.status === 'Poor' && b.status === 'Critical') return 1;
-    return 0;
+  // Device metrics (from selected integrations)
+  dashboardStatus.deviceMetrics.forEach(metric => {
+    warnings.push({
+      iconName: metric.iconName as keyof typeof Ionicons.glyphMap,
+      title: metric.label,
+      status: metric.status,
+      unit: metric.unit
+    });
   });
+
+  // External metrics (from selected integrations)
+  dashboardStatus.externalMetrics.forEach(metric => {
+    warnings.push({
+      iconName: metric.iconName as keyof typeof Ionicons.glyphMap,
+      title: metric.label,
+      status: metric.status,
+      unit: metric.unit
+    });
+  });
+
+  // Sort warnings by priority: Critical, Poor, Fair, Good, Excellent
+  const sortedWarnings = warnings.sort((a, b) => {
+    const statusOrder = { 'Critical': 0, 'Poor': 1, 'Fair': 2, 'Good': 3, 'Excellent': 4 };
+    return statusOrder[a.status] - statusOrder[b.status];
+  });
+
+  const hasData = dashboardStatus.hasAnyData;
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -84,12 +118,12 @@ export default function PatternWarningsScreen() {
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          {sortedWarnings.length > 0 ? (
+          {hasData && sortedWarnings.length > 0 ? (
             <>
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Warning Metrics</Text>
+                <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Your Health Metrics</Text>
                 <Text style={[styles.sectionSubtitle, darkMode && styles.sectionSubtitleDark]}>
-                  These metrics may be contributing to your migraines
+                  All tracked metrics, sorted by priority
                 </Text>
                 <View style={styles.warningsList}>
                   {sortedWarnings.map((warning, index) => (
@@ -104,40 +138,50 @@ export default function PatternWarningsScreen() {
                   ))}
                 </View>
               </View>
-              <View style={[styles.tipContainer, darkMode && styles.tipContainerDark]}>
-                <View style={styles.tipHeader}>
-                  <Ionicons 
-                    name="bulb" 
-                    size={16} 
-                    color={darkMode ? '#fbbf24' : '#f59e0b'} 
-                    style={styles.tipIcon}
-                  />
-                  <Text style={[styles.tipTitle, darkMode && styles.tipTitleDark]}>
-                    Recommendation
+              {/* Only show recommendation if there are actual warnings */}
+              {sortedWarnings.some(warning => warning.status === 'Critical' || warning.status === 'Poor') && (
+                <View style={[styles.tipContainer, darkMode && styles.tipContainerDark]}>
+                  <View style={styles.tipHeader}>
+                    <Ionicons 
+                      name="bulb" 
+                      size={16} 
+                      color={darkMode ? '#fbbf24' : '#f59e0b'} 
+                      style={styles.tipIcon}
+                    />
+                    <Text style={[styles.tipTitle, darkMode && styles.tipTitleDark]}>
+                      Recommendation
+                    </Text>
+                  </View>
+                  <Text style={[styles.tipText, darkMode && styles.tipTextDark]}>
+                    Consider adjusting habits with Critical or Poor status to help reduce migraine frequency and severity.
                   </Text>
                 </View>
-                <Text style={[styles.tipText, darkMode && styles.tipTextDark]}>
-                  Consider adjusting these habits to help reduce migraine frequency and severity.
-                </Text>
-              </View>
+              )}
             </>
           ) : (
             <View style={styles.noWarningsContainer}>
               <Ionicons 
-                name="checkmark-circle" 
+                name="analytics" 
                 size={64} 
-                color={darkMode ? '#10b981' : '#059669'} 
+                color={darkMode ? '#64748b' : '#94a3b8'} 
                 style={styles.noWarningsIcon}
               />
               <Text style={[styles.noWarningsTitle, darkMode && styles.noWarningsTitleDark]}>
-                All Good!
+                No Data Yet
               </Text>
               <Text style={[styles.noWarningsText, darkMode && styles.noWarningsTextDark]}>
-                {dashboardStatus.overallStatus === 'No Data' 
-                  ? 'No dashboard data available yet. Start tracking your daily metrics to see personalized warnings.'
-                  : 'Your tracked metrics are all within healthy ranges. Keep up the great work!'
-                }
+                Start tracking your daily metrics in the Dashboard to see your health patterns and get personalized recommendations.
               </Text>
+              <View style={[styles.instructionContainer, darkMode && styles.instructionContainerDark]}>
+                <Text style={[styles.instructionTitle, darkMode && styles.instructionTitleDark]}>
+                  How to get started:
+                </Text>
+                <Text style={[styles.instructionText, darkMode && styles.instructionTextDark]}>
+                  • Navigate to Dashboard{'\n'}
+                  • Log your meals, water intake, and alcohol consumption{'\n'}
+                  • Return here to see your health metrics analysis
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -328,8 +372,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 32,
+    marginBottom: 24,
   },
   noWarningsTextDark: {
+    color: '#94a3b8',
+  },
+  instructionContainer: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    width: '100%',
+  },
+  instructionContainerDark: {
+    backgroundColor: '#334155',
+    borderColor: '#475569',
+  },
+  instructionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 8,
+  },
+  instructionTitleDark: {
+    color: '#e2e8f0',
+  },
+  instructionText: {
+    fontSize: 14,
+    color: '#64748b',
+    lineHeight: 20,
+  },
+  instructionTextDark: {
     color: '#94a3b8',
   },
 });

@@ -24,17 +24,25 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   const submitData = () => {
     const selectedBracket = ageBrackets.find(b => b.id === ageBracket);
+    const selectedIntegrations = integrations.filter(i => i.enabled).map(i => i.id);
 
     const userData = {
         name,
         ageBracket,
-        integrations: integrations.filter(i => i.enabled).map(i => i.id),
+        integrations: selectedIntegrations,
+        dashboardData: selectedIntegrations.length > 0 ? {
+          date: new Date().toISOString().split('T')[0],
+          meals: null,
+          hydration: null,
+          alcohol: null,
+          hasManualData: false
+        } : null
     };
 
     const backendData = {
         name,
         ageBracket: selectedBracket?.value || 0,
-        integrations: integrations.filter(i => i.enabled).map(i => i.id),
+        integrations: selectedIntegrations,
     };
     
     console.log("Context data (ID):", userData);

@@ -8,9 +8,10 @@ interface DashboardMetric {
 
 interface DashboardData {
   date: string; // YYYY-MM-DD format
-  meals: DashboardMetric;
-  hydration: DashboardMetric;
-  alcohol: DashboardMetric;
+  meals: DashboardMetric | null; // Allow null for metrics that haven't been entered yet
+  hydration: DashboardMetric | null;
+  alcohol: DashboardMetric | null;
+  hasManualData: boolean; // Track if any manual data has been entered
 }
 
 interface UserData {
@@ -27,6 +28,7 @@ interface UserContextType {
   updateAgeBracket: (ageBracket: string) => void;
   updateIntegrations: (integrations: string[]) => void;
   updateDashboardData: (mealsCount: number, waterCount: number, alcoholCount: number) => void;
+  initializeDashboardData: () => void; // Initialize dashboard with device/external metrics
   clearUserData: () => void;
 }
 
@@ -105,12 +107,46 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const updateIntegrations = (integrations: string[]) => {
-    setUserData(prev => prev ? { ...prev, integrations } : { 
-      name: '', 
-      ageBracket: '', 
-      integrations, 
-      dashboardData: null 
+    setUserData(prev => {
+      const newData = prev ? { ...prev, integrations } : { 
+        name: '', 
+        ageBracket: '', 
+        integrations, 
+        dashboardData: null 
+      };
+      
+      // Initialize dashboard data if integrations are selected and no dashboard data exists
+      if (integrations.length > 0 && !newData.dashboardData) {
+        const today = getTodayDateString();
+        newData.dashboardData = {
+          date: today,
+          meals: null,
+          hydration: null,
+          alcohol: null,
+          hasManualData: false
+        };
+      }
+      
+      return newData;
     });
+  };
+
+  const initializeDashboardData = () => {
+    if (!userData) return;
+    
+    const today = getTodayDateString();
+    const newDashboardData = {
+      date: today,
+      meals: null,
+      hydration: null,
+      alcohol: null,
+      hasManualData: false
+    };
+
+    setUserData(prev => prev ? { 
+      ...prev, 
+      dashboardData: newDashboardData 
+    } : null);
   };
 
   const updateDashboardData = (mealsCount: number, waterCount: number, alcoholCount: number) => {
@@ -137,7 +173,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         value: alcoholValue,
         status: getStatusFromValue(alcoholValue),
         unit: alcoholCount === 0 ? 'None today' : `${alcoholCount} units`
-      }
+      },
+      hasManualData: true // Mark that manual data has been entered
     };
 
     setUserData(prev => prev ? { 
@@ -163,6 +200,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       updateAgeBracket, 
       updateIntegrations, 
       updateDashboardData,
+      initializeDashboardData,
       clearUserData 
     }}>
       {children}

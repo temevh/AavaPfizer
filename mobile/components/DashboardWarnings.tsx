@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDashboardStatus } from '@/hooks/useDashboardStatus';
+import { useUser } from '@/contexts/UserContext';
 
 interface DashboardWarningsProps {
   onPress?: () => void;
@@ -14,11 +15,15 @@ export function DashboardWarnings({ onPress, maxItems = 3, style }: DashboardWar
   const { darkMode } = useTheme();
   const dashboardStatus = useDashboardStatus();
 
-  // Collect all critical/poor items
-  const warnings = [];
+  // Check if there's any data at all
+  const hasAnyData = dashboardStatus.hasAnyData;
+
+  // Collect ALL metrics (manual, device, external)
+  const allMetrics = [];
   
-  if (dashboardStatus.meals && (dashboardStatus.meals.status === 'Critical' || dashboardStatus.meals.status === 'Poor')) {
-    warnings.push({
+  // Manual metrics (if available)
+  if (dashboardStatus.meals) {
+    allMetrics.push({
       iconName: 'restaurant' as keyof typeof Ionicons.glyphMap,
       title: 'Meals',
       status: dashboardStatus.meals.status,
@@ -26,8 +31,8 @@ export function DashboardWarnings({ onPress, maxItems = 3, style }: DashboardWar
     });
   }
 
-  if (dashboardStatus.hydration && (dashboardStatus.hydration.status === 'Critical' || dashboardStatus.hydration.status === 'Poor')) {
-    warnings.push({
+  if (dashboardStatus.hydration) {
+    allMetrics.push({
       iconName: 'water' as keyof typeof Ionicons.glyphMap,
       title: 'Hydration',
       status: dashboardStatus.hydration.status,
@@ -35,8 +40,8 @@ export function DashboardWarnings({ onPress, maxItems = 3, style }: DashboardWar
     });
   }
 
-  if (dashboardStatus.alcohol && (dashboardStatus.alcohol.status === 'Critical' || dashboardStatus.alcohol.status === 'Poor')) {
-    warnings.push({
+  if (dashboardStatus.alcohol) {
+    allMetrics.push({
       iconName: 'wine' as keyof typeof Ionicons.glyphMap,
       title: 'Alcohol',
       status: dashboardStatus.alcohol.status,
@@ -44,64 +49,134 @@ export function DashboardWarnings({ onPress, maxItems = 3, style }: DashboardWar
     });
   }
 
-  // Don't render if no warnings
-  if (warnings.length === 0) {
+  // Device metrics (based on user's selected integrations)
+  dashboardStatus.deviceMetrics.forEach(metric => {
+    allMetrics.push({
+      iconName: metric.iconName as keyof typeof Ionicons.glyphMap,
+      title: metric.label,
+      status: metric.status,
+      unit: metric.unit
+    });
+  });
+
+  // External metrics (based on user's selected integrations)
+  dashboardStatus.externalMetrics.forEach(metric => {
+    allMetrics.push({
+      iconName: metric.iconName as keyof typeof Ionicons.glyphMap,
+      title: metric.label,
+      status: metric.status,
+      unit: metric.unit
+    });
+  });
+
+  // If no data exists, show a getting started message
+  if (!hasAnyData) {
+    const content = (
+      <View style={[styles.container, darkMode && styles.containerDark, style]}>
+        <View style={styles.header}>
+          <Ionicons 
+            name="analytics-outline" 
+            size={20} 
+            color={darkMode ? '#94a3b8' : '#64748b'} 
+            style={styles.headerIcon}
+          />
+          <Text style={[styles.title, darkMode && styles.titleDark]}>
+            Track your health metrics
+          </Text>
+        </View>
+        <Text style={[styles.getStartedText, darkMode && styles.getStartedTextDark]}>
+          Start logging your daily data in the Dashboard to see personalized health insights and warnings here.
+        </Text>
+      </View>
+    );
+
+    if (onPress) {
+      return (
+        <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+          {content}
+        </Pressable>
+      );
+    }
+
+    return content;
+  }
+
+  // Don't render if no metrics exist
+  if (allMetrics.length === 0) {
     return null;
   }
 
-  // Sort warnings by priority: Critical first, then Poor
-  const sortedWarnings = warnings.sort((a, b) => {
-    if (a.status === 'Critical' && b.status === 'Poor') return -1;
-    if (a.status === 'Poor' && b.status === 'Critical') return 1;
-    return 0;
+  // Sort metrics by priority: Critical, Poor, Fair, Good, Excellent
+  const sortedMetrics = allMetrics.sort((a, b) => {
+    const statusOrder = { 'Critical': 0, 'Poor': 1, 'Fair': 2, 'Good': 3, 'Excellent': 4 };
+    return statusOrder[a.status] - statusOrder[b.status];
   });
 
   // Limit to maxItems
-  const displayWarnings = sortedWarnings.slice(0, maxItems);
-  const hasMoreWarnings = sortedWarnings.length > maxItems;
+  const displayMetrics = sortedMetrics.slice(0, maxItems);
+  const hasMoreMetrics = sortedMetrics.length > maxItems;
+
+  // Determine if we should show warning styling (if any Critical/Poor exist)
+  const hasWarnings = sortedMetrics.some(metric => metric.status === 'Critical' || metric.status === 'Poor');
+  const headerTitle = hasWarnings ? "Keep an eye on these" : "Your health metrics";
+  const headerIcon = hasWarnings ? "alert-circle" : "analytics-outline";
+  const headerColor = hasWarnings 
+    ? (darkMode ? '#f97316' : '#ef4444') 
+    : (darkMode ? '#94a3b8' : '#64748b');
 
   const content = (
     <View style={[styles.container, darkMode && styles.containerDark, style]}>
       <View style={styles.header}>
         <Ionicons 
-          name="alert-circle" 
+          name={headerIcon} 
           size={20} 
-          color={darkMode ? '#f97316' : '#ef4444'} 
+          color={headerColor} 
           style={styles.headerIcon}
         />
         <Text style={[styles.title, darkMode && styles.titleDark]}>
-          Keep an eye on these
+          {headerTitle}
         </Text>
       </View>
       
-      {displayWarnings.map((warning, index) => {
-        const statusColor = warning.status === 'Critical' ? '#ef4444' : '#f97316';
+      {displayMetrics.map((metric, index) => {
+        const getStatusColor = (status: string) => {
+          switch (status) {
+            case 'Critical': return '#ef4444';
+            case 'Poor': return '#f97316';
+            case 'Fair': return '#eab308';
+            case 'Good': return '#84cc16';
+            case 'Excellent': return '#10b981';
+            default: return '#64748b';
+          }
+        };
+        
+        const statusColor = getStatusColor(metric.status);
         
         return (
           <View key={index} style={styles.warningItem}>
             <View style={styles.warningHeader}>
               <View style={[styles.warningIconContainer, darkMode && styles.warningIconContainerDark]}>
-                <Ionicons name={warning.iconName} size={16} color={statusColor} />
+                <Ionicons name={metric.iconName} size={16} color={statusColor} />
               </View>
               <View style={styles.warningContent}>
                 <Text style={[styles.warningTitle, darkMode && styles.warningTitleDark]}>
-                  {warning.title}
+                  {metric.title}
                 </Text>
                 <Text style={[styles.warningUnit, darkMode && styles.warningUnitDark]}>
-                  {warning.unit}
+                  {metric.unit}
                 </Text>
               </View>
             </View>
             <Text style={[styles.warningStatus, { color: statusColor }]}>
-              {warning.status}
+              {metric.status}
             </Text>
           </View>
         );
       })}
       
-      {hasMoreWarnings && (
+      {hasMoreMetrics && (
         <Text style={[styles.moreText, darkMode && styles.moreTextDark]}>
-          +{sortedWarnings.length - maxItems} more warning{sortedWarnings.length - maxItems > 1 ? 's' : ''}
+          +{sortedMetrics.length - maxItems} more metric{sortedMetrics.length - maxItems > 1 ? 's' : ''}
         </Text>
       )}
       
@@ -113,7 +188,7 @@ export function DashboardWarnings({ onPress, maxItems = 3, style }: DashboardWar
             color={darkMode ? '#a855f7' : '#9333ea'} 
           />
           <Text style={[styles.viewAllText, darkMode && styles.viewAllTextDark]}>
-            View all warnings
+            View all metrics
           </Text>
         </View>
       )}
@@ -167,6 +242,14 @@ const styles = StyleSheet.create({
   },
   titleDark: {
     color: '#e2e8f0',
+  },
+  getStartedText: {
+    fontSize: 14,
+    color: '#64748b',
+    lineHeight: 20,
+  },
+  getStartedTextDark: {
+    color: '#94a3b8',
   },
   warningItem: {
     flexDirection: 'row',

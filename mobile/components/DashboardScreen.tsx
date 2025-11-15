@@ -100,7 +100,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
       const match = userData.dashboardData.meals.unit.match(/(\d+)/);
       return match ? parseInt(match[1], 10) : 3;
     }
-    return 3;
+    return 0;
   });
   
   const [waterCount, setWaterCount] = useState(() => {
@@ -108,7 +108,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
       const match = userData.dashboardData.hydration.unit.match(/(\d+)/);
       return match ? parseInt(match[1], 10) : 6;
     }
-    return 6;
+    return 0;
   });
   
   const [alcoholCount, setAlcoholCount] = useState(() => {
