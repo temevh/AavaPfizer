@@ -166,36 +166,78 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     setShowTrackingModal(false);
   };
 
-  // Mock data - use stored values or calculate from current counts
+  // Use data from UserContext - all metrics default to 0 if not set
   const manualMetrics: MetricProps[] = [
     { 
       iconName: 'restaurant', 
       label: 'Meals', 
-      value: userData?.dashboardData?.meals?.value ?? mealsCount / 5, 
-      unit: userData?.dashboardData?.meals?.unit ?? `${mealsCount} meals today` 
+      value: userData?.dashboardData?.meals?.value ?? 0, 
+      unit: userData?.dashboardData?.meals?.unit ?? '0 meals today' 
     },
     { 
       iconName: 'water', 
       label: 'Hydration', 
-      value: userData?.dashboardData?.hydration?.value ?? waterCount / 10, 
-      unit: userData?.dashboardData?.hydration?.unit ?? `${waterCount} glasses` 
+      value: userData?.dashboardData?.hydration?.value ?? 0, 
+      unit: userData?.dashboardData?.hydration?.unit ?? '0 glasses' 
     },
     { 
       iconName: 'wine', 
       label: 'Alcohol', 
-      value: userData?.dashboardData?.alcohol?.value ?? (alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5))), 
-      unit: userData?.dashboardData?.alcohol?.unit ?? (alcoholCount === 0 ? 'None today' : `${alcoholCount} units`) 
+      value: userData?.dashboardData?.alcohol?.value ?? 1.0, 
+      unit: userData?.dashboardData?.alcohol?.unit ?? 'None today' 
     },
   ];
 
   const allDeviceMetrics = [
-    { id: 'steps', iconName: 'walk' as keyof typeof Ionicons.glyphMap, label: 'Steps', value: 0.4, unit: '5,240 steps' },
-    { id: 'outdoor-brightness', iconName: 'sunny' as keyof typeof Ionicons.glyphMap, label: 'Outdoor Brightness', value: 0.6, unit: 'Moderate' },
-    { id: 'sleep', iconName: 'moon' as keyof typeof Ionicons.glyphMap, label: 'Sleep Quality', value: 0.8, unit: '7.5 hours' },
-    { id: 'usage-accuracy', iconName: 'phone-portrait' as keyof typeof Ionicons.glyphMap, label: 'Usage Accuracy', value: 0.8, unit: 'Low typos' },
-    { id: 'screen-brightness', iconName: 'eye' as keyof typeof Ionicons.glyphMap, label: 'Screen Brightness', value: 0.4, unit: '75% avg' },
-    { id: 'screen-time', iconName: 'time' as keyof typeof Ionicons.glyphMap, label: 'Screen Time', value: 0.2, unit: '8.5 hours' },
-    { id: 'heart-rate', iconName: 'heart' as keyof typeof Ionicons.glyphMap, label: 'Heart Rate', value: 0.8, unit: '68 bpm avg' },
+    { 
+      id: 'steps', 
+      iconName: 'walk' as keyof typeof Ionicons.glyphMap, 
+      label: 'Steps', 
+      value: userData?.dashboardData?.steps?.value ?? 0, 
+      unit: userData?.dashboardData?.steps?.unit ?? '0 steps' 
+    },
+    { 
+      id: 'outdoor-brightness', 
+      iconName: 'sunny' as keyof typeof Ionicons.glyphMap, 
+      label: 'Outdoor Brightness', 
+      value: userData?.dashboardData?.outdoorBrightness?.value ?? 0, 
+      unit: userData?.dashboardData?.outdoorBrightness?.unit ?? 'No data' 
+    },
+    { 
+      id: 'sleep', 
+      iconName: 'moon' as keyof typeof Ionicons.glyphMap, 
+      label: 'Sleep Quality', 
+      value: userData?.dashboardData?.sleep?.value ?? 0, 
+      unit: userData?.dashboardData?.sleep?.unit ?? '0 hours' 
+    },
+    { 
+      id: 'usage-accuracy', 
+      iconName: 'phone-portrait' as keyof typeof Ionicons.glyphMap, 
+      label: 'Usage Accuracy', 
+      value: userData?.dashboardData?.usageAccuracy?.value ?? 0, 
+      unit: userData?.dashboardData?.usageAccuracy?.unit ?? 'No data' 
+    },
+    { 
+      id: 'screen-brightness', 
+      iconName: 'eye' as keyof typeof Ionicons.glyphMap, 
+      label: 'Screen Brightness', 
+      value: userData?.dashboardData?.screenBrightness?.value ?? 0, 
+      unit: userData?.dashboardData?.screenBrightness?.unit ?? 'No data' 
+    },
+    { 
+      id: 'screen-time', 
+      iconName: 'time' as keyof typeof Ionicons.glyphMap, 
+      label: 'Screen Time', 
+      value: userData?.dashboardData?.screenTime?.value ?? 0, 
+      unit: userData?.dashboardData?.screenTime?.unit ?? '0 hours' 
+    },
+    { 
+      id: 'heart-rate', 
+      iconName: 'heart' as keyof typeof Ionicons.glyphMap, 
+      label: 'Heart Rate', 
+      value: userData?.dashboardData?.heartRate?.value ?? 0, 
+      unit: userData?.dashboardData?.heartRate?.unit ?? '0 bpm avg' 
+    },
   ];
 
   const deviceMetrics = allDeviceMetrics.filter(metric => 
@@ -203,8 +245,20 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   );
 
   const allExternalMetrics = [
-    { id: 'calendar', iconName: 'calendar' as keyof typeof Ionicons.glyphMap, label: 'Calendar Stress', value: 0.4, unit: '8 meetings' },
-    { id: 'weather', iconName: 'cloud' as keyof typeof Ionicons.glyphMap, label: 'Weather', value: 0.6, unit: 'Stable pressure' },
+    { 
+      id: 'calendar', 
+      iconName: 'calendar' as keyof typeof Ionicons.glyphMap, 
+      label: 'Calendar Stress', 
+      value: userData?.dashboardData?.calendar?.value ?? 0, 
+      unit: userData?.dashboardData?.calendar?.unit ?? 'No data' 
+    },
+    { 
+      id: 'weather', 
+      iconName: 'cloud' as keyof typeof Ionicons.glyphMap, 
+      label: 'Weather', 
+      value: userData?.dashboardData?.weather?.value ?? 0, 
+      unit: userData?.dashboardData?.weather?.unit ?? 'No data' 
+    },
   ];
 
   const externalMetrics = allExternalMetrics.filter(metric => 

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface MigraineTrackingScreenProps {
   navigation: {
@@ -43,6 +44,20 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [showNotes, setShowNotes] = useState(true);
   const [enableAIAnalysis, setEnableAIAnalysis] = useState(false);
   const { darkMode } = useTheme();
+  const { userData, updateIntegrations } = useUser();
+
+  React.useEffect(() => {
+    if (userData?.dashboardData) {
+      const hasNullValues = 
+        userData.dashboardData.meals === null || 
+        userData.dashboardData.hydration === null || 
+        userData.dashboardData.alcohol === null;
+      
+      if (hasNullValues && userData.integrations) {
+        updateIntegrations(userData.integrations);
+      }
+    }
+  }, [userData?.dashboardData, userData?.integrations, updateIntegrations]);
 
   const symptoms = [
     'Aura',
@@ -65,6 +80,14 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
 
   const handleSubmit = () => {
     setShowSuccess(true);
+    
+    console.log('=== UserContext Data ===');
+    console.log('Full userData object:', JSON.stringify(userData, null, 2));
+    console.log('User name:', userData?.name);
+    console.log('Age bracket:', userData?.ageBracket);
+    console.log('Integrations:', userData?.integrations);
+    console.log('Dashboard data:', userData?.dashboardData);
+    console.log('========================');
     
     if (enableAIAnalysis) {
       const data = {
