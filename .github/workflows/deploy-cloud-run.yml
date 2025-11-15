@@ -1,0 +1,58 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: europe-north1
+  SERVICE_NAME: migraine-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --source ./backend \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars USE_GCS=true \
+            --set-env-vars GCS_BUCKET_NAME=aava-pfizer-ml-migraine-ml \
+            --set-env-vars GCS_MODEL_PATH=models/migraine-classifier \
+            --set-env-vars USE_BIGQUERY=true \
+            --set-env-vars BIGQUERY_DATASET=migraine_data \
+            --set-env-vars BIGQUERY_TABLE=predictions \
+            --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+            --set-env-vars ONLINE_LEARNING_RATE=0.0001 \
+            --set-env-vars REPLAY_BUFFER_SIZE=100 \
+            --set-env-vars CONFIDENCE_THRESHOLD=0.8
+      
+      - name: Show service URL
+        run: |
+          echo "Service deployed to:"
+          gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)'
