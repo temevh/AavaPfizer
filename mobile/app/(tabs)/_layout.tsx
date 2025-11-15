@@ -27,6 +27,12 @@ export default function TabLayout() {
       
         }}
       />
+      <Tabs.Screen
+        name="pattern-warnings"
+        options={{
+          title: 'Pattern Warnings',
+        }}
+      />
     </Tabs>
   );
 }
