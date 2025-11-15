@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import FloatingMenu from './menu';
+import { scheduleTestNotification, sendImmediateNotification } from '@/utils/notifications';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
@@ -188,5 +189,34 @@ const styles = StyleSheet.create({
   },
   onboardingButtonTextDark: {
     color: '#a855f7',
+  },
+  testNotificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  testNotificationButtonDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#60a5fa',
+  },
+  testNotificationButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3b82f6',
+  },
+  testNotificationButtonTextDark: {
+    color: '#60a5fa',
   },
 });
