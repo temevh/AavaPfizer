@@ -39,16 +39,16 @@ export default function HomeScreen() {
 
           {/* Emergency Button */}
         <Pressable
-          onLongPress={() => router.push('/emergency')}
-          delayLongPress={500}
+          onPress={() => router.push('/emergency')}
           style={({ pressed }) => [
             styles.emergencyButton,
+            darkMode && styles.emergencyButtonDark,
             pressed && styles.emergencyButtonPressed,
           ]}
         >
-          <Ionicons name="alert-circle" size={64} color="#fff" style={styles.emergencyIcon} />
-          <Text style={styles.emergencyText}>Emergency Help</Text>
-          <Text style={styles.emergencySubtext}>Press and hold for immediate migraine relief tips</Text>
+          <Ionicons name="medical" size={48} color="#dc2626" style={styles.emergencyIcon} />
+          <Text style={[styles.emergencyText, darkMode && styles.emergencyTextDark]}>Migraine Help</Text>
+          <Text style={[styles.emergencySubtext, darkMode && styles.emergencySubtextDark]}>Press for immediate migraine relief tips</Text>
         </Pressable>
 
         {/* Dashboard Warnings */}
@@ -128,9 +128,11 @@ const styles = StyleSheet.create({
   },
   emergencyButton: {
     width: '100%',
-    backgroundColor: '#dc2626',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#dc2626',
     borderRadius: 24,
-    padding: 32,
+    padding: 24,
     alignItems: 'center',
     marginBottom: 24,
     overflow: 'hidden',
@@ -140,23 +142,33 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 5,
   },
+  emergencyButtonDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#dc2626',
+  },
   emergencyButtonPressed: {
     transform: [{ scale: 0.98 }],
   },
   emergencyIcon: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   emergencyText: {
     fontSize: 24,
     fontWeight: '500',
-    color: '#fff',
+    color: '#dc2626',
     marginBottom: 8,
+  },
+  emergencyTextDark: {
+    color: '#ef4444',
   },
   emergencySubtext: {
     fontSize: 16,
-    color: '#fecdd3',
+    color: '#991b1b',
     textAlign: 'center',
     paddingHorizontal: 16,
+  },
+  emergencySubtextDark: {
+    color: '#dc2626',
   },
   warningsContainer: {
     marginBottom: 24,
