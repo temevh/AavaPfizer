@@ -1,11 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Alert, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import FloatingMenu from './menu';
 import { NavigationBar } from '@/components/NavigationBar';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import FloatingMenu from './menu';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width - 48, 448);
@@ -13,6 +14,7 @@ const maxWidth = Math.min(width - 48, 448);
 export default function HomeScreen() {
   const { darkMode } = useTheme();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const router = useRouter();
   
   const { userData } = useUser();
   console.log("User Data in HomeScreen:", userData);
@@ -32,7 +34,7 @@ export default function HomeScreen() {
 
           {/* Emergency Button */}
         <Pressable
-          onPress={() => Alert.alert('Emergency Help', 'Emergency tips will be shown here')}
+          onPress={() => router.push('/emergency')}
           style={({ pressed }) => [
             styles.emergencyButton,
             pressed && styles.emergencyButtonPressed,
