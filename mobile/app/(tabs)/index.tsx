@@ -1,5 +1,6 @@
 import { NavigationBar } from '@/components/NavigationBar';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
+import { DashboardWarnings } from '@/components/DashboardWarnings';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,10 @@ export default function HomeScreen() {
   
   const { userData } = useUser();
   console.log("User Data in HomeScreen:", userData);
+
+  const handleViewWarnings = () => {
+    router.push('/pattern-warnings');
+  };
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -45,6 +50,13 @@ export default function HomeScreen() {
           <Text style={styles.emergencyText}>Emergency Help</Text>
           <Text style={styles.emergencySubtext}>Press and hold for immediate migraine relief tips</Text>
         </Pressable>
+
+        {/* Dashboard Warnings */}
+        <DashboardWarnings 
+          onPress={handleViewWarnings}
+          maxItems={2}
+          style={styles.warningsContainer}
+        />
 
         {/* Onboarding Button */}
         <Pressable
@@ -145,6 +157,9 @@ const styles = StyleSheet.create({
     color: '#fecdd3',
     textAlign: 'center',
     paddingHorizontal: 16,
+  },
+  warningsContainer: {
+    marginBottom: 24,
   },
   onboardingButton: {
     flexDirection: 'row',

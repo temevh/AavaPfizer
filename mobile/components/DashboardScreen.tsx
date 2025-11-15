@@ -89,13 +89,37 @@ function MetricCard({ iconName, label, value, unit, editable = false, darkMode }
 }
 
 export function DashboardScreen({ navigation }: DashboardScreenProps) {
-  const { userData } = useUser();
+  const { userData, updateDashboardData } = useUser();
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
-  const [mealsCount, setMealsCount] = useState(3);
-  const [waterCount, setWaterCount] = useState(6);
-  const [alcoholCount, setAlcoholCount] = useState(0);
+  
+  // Initialize from stored data or defaults
+  const [mealsCount, setMealsCount] = useState(() => {
+    if (userData?.dashboardData?.meals?.unit) {
+      const match = userData.dashboardData.meals.unit.match(/(\d+)/);
+      return match ? parseInt(match[1], 10) : 3;
+    }
+    return 0;
+  });
+  
+  const [waterCount, setWaterCount] = useState(() => {
+    if (userData?.dashboardData?.hydration?.unit) {
+      const match = userData.dashboardData.hydration.unit.match(/(\d+)/);
+      return match ? parseInt(match[1], 10) : 6;
+    }
+    return 0;
+  });
+  
+  const [alcoholCount, setAlcoholCount] = useState(() => {
+    if (userData?.dashboardData?.alcohol?.unit) {
+      if (userData.dashboardData.alcohol.unit === 'None today') return 0;
+      const match = userData.dashboardData.alcohol.unit.match(/(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    }
+    return 0;
+  });
+  
   const { darkMode } = useTheme();
 
   // Get user's selected integrations
@@ -136,11 +160,32 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     return 'units';
   };
 
-  // Mock data - values from 0 to 1
+  const handleSaveTracking = () => {
+    // Update the dashboard data in UserContext
+    updateDashboardData(mealsCount, waterCount, alcoholCount);
+    setShowTrackingModal(false);
+  };
+
+  // Mock data - use stored values or calculate from current counts
   const manualMetrics: MetricProps[] = [
-    { iconName: 'restaurant', label: 'Meals', value: mealsCount / 5, unit: `${mealsCount} meals today` },
-    { iconName: 'water', label: 'Hydration', value: waterCount / 10, unit: `${waterCount} glasses` },
-    { iconName: 'wine', label: 'Alcohol', value: alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5)), unit: alcoholCount === 0 ? 'None today' : `${alcoholCount} units` },
+    { 
+      iconName: 'restaurant', 
+      label: 'Meals', 
+      value: userData?.dashboardData?.meals?.value ?? mealsCount / 5, 
+      unit: userData?.dashboardData?.meals?.unit ?? `${mealsCount} meals today` 
+    },
+    { 
+      iconName: 'water', 
+      label: 'Hydration', 
+      value: userData?.dashboardData?.hydration?.value ?? waterCount / 10, 
+      unit: userData?.dashboardData?.hydration?.unit ?? `${waterCount} glasses` 
+    },
+    { 
+      iconName: 'wine', 
+      label: 'Alcohol', 
+      value: userData?.dashboardData?.alcohol?.value ?? (alcoholCount === 0 ? 1.0 : Math.max(0, 1 - (alcoholCount / 5))), 
+      unit: userData?.dashboardData?.alcohol?.unit ?? (alcoholCount === 0 ? 'None today' : `${alcoholCount} units`) 
+    },
   ];
 
   const allDeviceMetrics = [
@@ -263,7 +308,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
             </View>
             
             <Pressable
-              onPress={() => setShowTrackingModal(false)}
+              onPress={handleSaveTracking}
               style={styles.modalSaveButton}
             >
               <Text style={styles.modalSaveText}>Save</Text>
