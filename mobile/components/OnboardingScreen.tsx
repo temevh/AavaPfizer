@@ -23,14 +23,25 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const { setUserData } = useUser();
 
   const submitData = () => {
+    const selectedBracket = ageBrackets.find(b => b.id === ageBracket);
+
     const userData = {
         name,
         ageBracket,
         integrations: integrations.filter(i => i.enabled).map(i => i.id),
     };
-    console.log("submitted data:", userData);
+
+    const backendData = {
+        name,
+        ageBracket: selectedBracket?.value || 0,
+        integrations: integrations.filter(i => i.enabled).map(i => i.id),
+    };
+    
+    console.log("Context data (ID):", userData);
+    console.log("Backend data (value):", backendData);
+    
     setUserData(userData);
-    //Send data to backend
+    // TODO: Send backendData  API endpoint
     onComplete();
   }
   
@@ -182,7 +193,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 {ageBrackets.map((bracket) => (
                   <Pressable
                     key={bracket.id}
-                    onPress={() => setAgeBracket(bracket.value.toString())}
+                    onPress={() => setAgeBracket(bracket.id)}
                     style={[
                       styles.ageBracketButton,
                       ageBracket === bracket.value.toString() && styles.ageBracketButtonSelected,
