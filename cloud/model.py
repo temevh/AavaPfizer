@@ -13,13 +13,16 @@ class MigraineClassifier(nn.Module):
     Neural network for multi-class migraine classification.
 
     Architecture:
-    - Input layer: 23 features (Age, Duration, Frequency, symptoms, etc.)
+    - Input layer: 50 features (23 original + 27 expandable fields)
     - Hidden layers: Configurable (default: [64, 32])
     - Output layer: 8 classes (7 migraine types + No migraine)
     - Dropout for regularization
+
+    Note: Extra features beyond the original 23 are zero-padded by default
+          and populated through user interaction for online learning.
     """
 
-    def __init__(self, input_dim=23, hidden_dims=[64, 32], num_classes=8, dropout_rate=0.3):
+    def __init__(self, input_dim=50, hidden_dims=[64, 32], num_classes=8, dropout_rate=0.3):
         super(MigraineClassifier, self).__init__()
 
         self.input_dim = input_dim
@@ -82,10 +85,16 @@ CLASS_NAMES = [
     "Other"
 ]
 
-# Feature names in order
+# Feature names in order (original 23 from dataset)
 FEATURE_NAMES = [
     'Age', 'Duration', 'Frequency', 'Location', 'Character', 'Intensity',
     'Nausea', 'Vomit', 'Phonophobia', 'Photophobia', 'Visual', 'Sensory',
     'Dysphasia', 'Dysarthria', 'Vertigo', 'Tinnitus', 'Hypoacusis',
     'Diplopia', 'Defect', 'Ataxia', 'Conscience', 'Paresthesia', 'DPF'
+]
+
+# Extended feature names for expandable model (50 total)
+# Features 24-50 are reserved for future app-specific fields
+EXTENDED_FEATURE_NAMES = FEATURE_NAMES + [
+    f'Extended_Feature_{i}' for i in range(1, 28)  # 27 additional features
 ]

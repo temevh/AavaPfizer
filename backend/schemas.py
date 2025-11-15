@@ -35,15 +35,53 @@ class MigraineFeatures(BaseModel):
     paresthesia: int = Field(..., ge=0, le=1, description="Paresthesia present")
     dpf: int = Field(..., ge=0, le=1, description="Family history (DPF)")
 
+    # Extended features (24-50) - Optional fields for app expansion
+    # Default to 0 if not provided
+    ext_1: int = Field(default=0, ge=0, le=100, description="Extended feature 1")
+    ext_2: int = Field(default=0, ge=0, le=100, description="Extended feature 2")
+    ext_3: int = Field(default=0, ge=0, le=100, description="Extended feature 3")
+    ext_4: int = Field(default=0, ge=0, le=100, description="Extended feature 4")
+    ext_5: int = Field(default=0, ge=0, le=100, description="Extended feature 5")
+    ext_6: int = Field(default=0, ge=0, le=100, description="Extended feature 6")
+    ext_7: int = Field(default=0, ge=0, le=100, description="Extended feature 7")
+    ext_8: int = Field(default=0, ge=0, le=100, description="Extended feature 8")
+    ext_9: int = Field(default=0, ge=0, le=100, description="Extended feature 9")
+    ext_10: int = Field(default=0, ge=0, le=100, description="Extended feature 10")
+    ext_11: int = Field(default=0, ge=0, le=100, description="Extended feature 11")
+    ext_12: int = Field(default=0, ge=0, le=100, description="Extended feature 12")
+    ext_13: int = Field(default=0, ge=0, le=100, description="Extended feature 13")
+    ext_14: int = Field(default=0, ge=0, le=100, description="Extended feature 14")
+    ext_15: int = Field(default=0, ge=0, le=100, description="Extended feature 15")
+    ext_16: int = Field(default=0, ge=0, le=100, description="Extended feature 16")
+    ext_17: int = Field(default=0, ge=0, le=100, description="Extended feature 17")
+    ext_18: int = Field(default=0, ge=0, le=100, description="Extended feature 18")
+    ext_19: int = Field(default=0, ge=0, le=100, description="Extended feature 19")
+    ext_20: int = Field(default=0, ge=0, le=100, description="Extended feature 20")
+    ext_21: int = Field(default=0, ge=0, le=100, description="Extended feature 21")
+    ext_22: int = Field(default=0, ge=0, le=100, description="Extended feature 22")
+    ext_23: int = Field(default=0, ge=0, le=100, description="Extended feature 23")
+    ext_24: int = Field(default=0, ge=0, le=100, description="Extended feature 24")
+    ext_25: int = Field(default=0, ge=0, le=100, description="Extended feature 25")
+    ext_26: int = Field(default=0, ge=0, le=100, description="Extended feature 26")
+    ext_27: int = Field(default=0, ge=0, le=100, description="Extended feature 27")
+
     def to_tensor(self):
-        """Convert to list in correct order for model input."""
+        """Convert to list in correct order for model input (50 features)."""
         return [
+            # Original 23 features
             self.age, self.duration, self.frequency, self.location,
             self.character, self.intensity, self.nausea, self.vomit,
             self.phonophobia, self.photophobia, self.visual, self.sensory,
             self.dysphasia, self.dysarthria, self.vertigo, self.tinnitus,
             self.hypoacusis, self.diplopia, self.defect, self.ataxia,
-            self.conscience, self.paresthesia, self.dpf
+            self.conscience, self.paresthesia, self.dpf,
+            # Extended 27 features (default to 0)
+            self.ext_1, self.ext_2, self.ext_3, self.ext_4, self.ext_5,
+            self.ext_6, self.ext_7, self.ext_8, self.ext_9, self.ext_10,
+            self.ext_11, self.ext_12, self.ext_13, self.ext_14, self.ext_15,
+            self.ext_16, self.ext_17, self.ext_18, self.ext_19, self.ext_20,
+            self.ext_21, self.ext_22, self.ext_23, self.ext_24, self.ext_25,
+            self.ext_26, self.ext_27
         ]
 
     class Config:

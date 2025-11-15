@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     SAVE_FREQUENCY: int = int(os.getenv("SAVE_FREQUENCY", "5"))
 
     # Model settings
-    MODEL_INPUT_DIM: int = 23
+    MODEL_INPUT_DIM: int = 50  # Expanded from 23 to 50 for future features
     MODEL_HIDDEN_DIMS: list = [64, 32]
     MODEL_NUM_CLASSES: int = 8
     MODEL_DROPOUT: float = 0.3

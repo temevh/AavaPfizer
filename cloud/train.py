@@ -17,7 +17,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 from google.cloud import storage
 
-from model import MigraineClassifier, CLASS_NAMES, FEATURE_NAMES
+from .model import MigraineClassifier, CLASS_NAMES, FEATURE_NAMES
 
 
 class MigraineDataset(Dataset):
@@ -34,7 +34,7 @@ class MigraineDataset(Dataset):
         return self.features[idx], self.labels[idx]
 
 
-def load_and_preprocess_data(data_path):
+def load_and_preprocess_data(data_path, target_features=50):
     """Load and preprocess the augmented dataset."""
     print(f"Loading data from {data_path}...")
     df = pd.read_csv(data_path)
@@ -46,6 +46,16 @@ def load_and_preprocess_data(data_path):
     X = df[FEATURE_NAMES].values
     y = df['Type'].values
 
+    # Pad with zeros to reach target feature count (50)
+    current_features = X.shape[1]  # Should be 23
+    if current_features < target_features:
+        padding_size = target_features - current_features
+        zero_padding = np.zeros((X.shape[0], padding_size))
+        X = np.hstack([X, zero_padding])
+        print(f"\nExpanded features from {current_features} to {target_features}")
+        print(f"  - Original features: {current_features}")
+        print(f"  - Zero-padded features: {padding_size}")
+
     # Encode labels
     label_encoder = LabelEncoder()
     y_encoded = label_encoder.fit_transform(y)
@@ -54,7 +64,7 @@ def load_and_preprocess_data(data_path):
     for i, class_name in enumerate(label_encoder.classes_):
         print(f"  {i}: {class_name}")
 
-    # Scale features
+    # Scale features (including the zero-padded ones)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 

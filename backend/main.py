@@ -14,8 +14,9 @@ import joblib
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
-# Add cloud folder to path to import model
-sys.path.append(str(Path(__file__).parent.parent / "cloud"))
+# Add parent folder and cloud folder to path to import modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "cloud"))
 
 from model import MigraineClassifier, CLASS_NAMES
 from online_learning import OnlineLearningManager
@@ -94,10 +95,10 @@ def load_model():
 
         # Initialize model
         model = MigraineClassifier(
-            input_dim=23,
-            hidden_dims=[64, 32],
-            num_classes=8,
-            dropout_rate=0.3
+            input_dim=settings.MODEL_INPUT_DIM,  # 50 features
+            hidden_dims=settings.MODEL_HIDDEN_DIMS,
+            num_classes=settings.MODEL_NUM_CLASSES,
+            dropout_rate=settings.MODEL_DROPOUT
         )
         model.load_state_dict(state_dict)
 
