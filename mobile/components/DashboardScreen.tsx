@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -93,6 +94,8 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [trackingType, setTrackingType] = useState<'meals' | 'hydration' | 'alcohol'>('meals');
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [loadingInsight, setLoadingInsight] = useState(false);
   
   // Initialize from stored data or defaults
   const [mealsCount, setMealsCount] = useState(() => {
@@ -121,6 +124,27 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
   });
   
   const { darkMode } = useTheme();
+
+  // Load AI insights when dashboard loads
+  useEffect(() => {
+    loadDailyInsight();
+  }, [userData?.dashboardData]);
+
+  const loadDailyInsight = async () => {
+    if (!userData?.dashboardData) return;
+
+    setLoadingInsight(true);
+    try {
+      const { generateDashboardInsights } = await import('@/services/geminiService');
+      const insights = await generateDashboardInsights(userData.dashboardData);
+      setAiInsight(insights);
+    } catch (error) {
+      console.error('Failed to load AI insight:', error);
+      setAiInsight('');
+    } finally {
+      setLoadingInsight(false);
+    }
+  };
 
   // Get user's selected integrations
   const selectedIntegrations = userData?.integrations || [];
@@ -274,6 +298,44 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.content, { maxWidth }]}>
+          {/* AI Insight Card */}
+          {(aiInsight || loadingInsight) && (
+            <View style={[styles.insightCard, darkMode && styles.insightCardDark]}>
+              <View style={styles.insightHeader}>
+                <View style={styles.insightHeaderLeft}>
+                  <View style={styles.aiIconContainer}>
+                    <Ionicons name="sparkles" size={18} color="#9333ea" />
+                  </View>
+                  <Text style={[styles.insightTitle, darkMode && styles.textDark]}>
+                    AI Daily Insight
+                  </Text>
+                </View>
+                {aiInsight && !loadingInsight && (
+                  <Pressable onPress={loadDailyInsight}>
+                    <Ionicons
+                      name="refresh"
+                      size={20}
+                      color={darkMode ? '#94a3b8' : '#64748b'}
+                    />
+                  </Pressable>
+                )}
+              </View>
+
+              {loadingInsight ? (
+                <View style={styles.insightLoadingContainer}>
+                  <ActivityIndicator size="small" color="#9333ea" />
+                  <Text style={[styles.insightLoadingText, darkMode && styles.textDark]}>
+                    Analyzing your health data...
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[styles.insightText, darkMode && styles.textDark]}>
+                  {aiInsight}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Manual Inputs */}
           <View style={[styles.section, darkMode && styles.sectionDark]}>
             <Text style={[styles.sectionTitle, darkMode && styles.sectionTitleDark]}>Manual Tracking</Text>
@@ -401,6 +463,62 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     padding: 24,
+  },
+  insightCard: {
+    backgroundColor: '#faf5ff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  insightCardDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  insightHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f3e8ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  insightText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#475569',
+  },
+  insightLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  insightLoadingText: {
+    fontSize: 14,
+    color: '#64748b',
   },
   section: {
     marginBottom: 24,
