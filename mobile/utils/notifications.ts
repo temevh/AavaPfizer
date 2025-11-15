@@ -39,13 +39,13 @@ export async function scheduleTestNotification() {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Test Notification 📬",
-      body: 'This is a test push notification from your migraine tracker!',
+      title: "Remember to take a break! ⏰",
+      body: 'Your screen time has been high today. Consider resting your eyes for a bit.',
       data: { type: 'test' },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 2,
+      seconds: 5,
     },
   });
 }

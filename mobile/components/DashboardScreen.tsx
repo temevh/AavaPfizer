@@ -7,12 +7,14 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  Button,
 } from 'react-native';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingScreen } from './OnboardingScreen';
 import { useUser } from '../contexts/UserContext';
+import {scheduleTestNotification} from '@/utils/notifications';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width, 448);
@@ -166,6 +168,10 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     setShowTrackingModal(false);
   };
 
+  const testNotification = async () => {
+    await scheduleTestNotification();
+  }
+
   // Mock data - use stored values or calculate from current counts
   const manualMetrics: MetricProps[] = [
     { 
@@ -219,6 +225,7 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
         showBackButton={true}
       />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Button title="test notification" onPress={testNotification} />
         <View style={[styles.content, { maxWidth }]}>
           {/* Manual Inputs */}
           <View style={[styles.section, darkMode && styles.sectionDark]}>
