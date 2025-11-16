@@ -8,14 +8,12 @@ import {
   Dimensions,
   Modal,
   ActivityIndicator,
-  Button,
 } from 'react-native';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingScreen } from './OnboardingScreen';
 import { useUser } from '../contexts/UserContext';
-import {scheduleTestNotification} from '@/utils/notifications';
 
 const { width } = Dimensions.get('window');
 const maxWidth = Math.min(width, 448);
