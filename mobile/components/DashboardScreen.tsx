@@ -190,10 +190,6 @@ export function DashboardScreen({ navigation }: DashboardScreenProps) {
     setShowTrackingModal(false);
   };
 
-  // Use data from UserContext - all metrics default to 0 if not set
-  const testNotification = async () => {
-    await scheduleTestNotification();
-  }
 
   // Mock data - use stored values or calculate from current counts
   const manualMetrics: MetricProps[] = [

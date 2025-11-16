@@ -10,7 +10,6 @@ import {
   Dimensions,
   ActivityIndicator,
   PanResponder,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
@@ -67,7 +66,6 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   
   const sliderRef = useRef<View>(null);
   const sliderLayout = useRef({ x: 0, width: 0 });
-  const panX = useRef(new Animated.Value(0)).current;
   
   const updateIntensityFromPosition = useCallback((position: number) => {
     if (sliderLayout.current.width === 0) return;

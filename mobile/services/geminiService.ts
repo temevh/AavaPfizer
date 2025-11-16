@@ -84,7 +84,7 @@ export async function generateEmergencyTips(
     effectiveRemedies?: string[];
     ageBracket?: string;
   }
-): Promise<Array<{ title: string; description: string }>> {
+): Promise<{ title: string; description: string }[]> {
   const systemPrompt = `You are a migraine emergency assistant. Generate 3-4 specific, actionable tips for immediate relief. Return ONLY a JSON array of objects with 'title' and 'description' fields. Each description should be 1-2 sentences. Be practical and evidence-based.`;
 
   const userMessage = `Current symptoms: ${currentSymptoms.join(', ')}
@@ -127,19 +127,19 @@ Generate 3-4 immediate relief tips as a JSON array.`;
  * Analyze patterns and generate insights
  */
 export async function analyzePatterns(
-  migraineHistory: Array<{
+  migraineHistory: {
     date: string;
     symptoms: string[];
     intensity: number;
     triggers?: string[];
-  }>,
+  }[],
   dashboardHistory: any[]
-): Promise<Array<{
+): Promise<{
   type: 'positive' | 'negative' | 'warning' | 'insight';
   title: string;
   description: string;
   confidence: number;
-}>> {
+}[]> {
   const systemPrompt = `You are a migraine pattern analysis assistant. Analyze the data and identify 2-3 key patterns or insights. Return ONLY a JSON array of objects with fields: type ('positive', 'negative', 'warning', or 'insight'), title (short), description (1-2 sentences), and confidence (0-100). Focus on actionable patterns.`;
 
   const userMessage = `Analyze my migraine patterns:

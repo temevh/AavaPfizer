@@ -16,22 +16,22 @@ export interface DashboardStatus {
     value: number;
     unit: string;
   } | null;
-  deviceMetrics: Array<{
+  deviceMetrics: {
     id: string;
     status: 'Critical' | 'Poor' | 'Fair' | 'Good' | 'Excellent';
     value: number;
     unit: string;
     label: string;
     iconName: string;
-  }>;
-  externalMetrics: Array<{
+  }[];
+  externalMetrics: {
     id: string;
     status: 'Critical' | 'Poor' | 'Fair' | 'Good' | 'Excellent';
     value: number;
     unit: string;
     label: string;
     iconName: string;
-  }>;
+  }[];
   overallStatus: 'Critical' | 'Poor' | 'Fair' | 'Good' | 'Excellent' | 'No Data';
   lastUpdated: string | null;
   hasAnyData: boolean;

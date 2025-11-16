@@ -47,7 +47,7 @@ function TipCard({ iconName, iconColor, title, description, bgColor, darkMode }:
 
 export function EmergencyTipsScreen({ navigation }: EmergencyTipsScreenProps) {
   const [activeTab, setActiveTab] = useState<'personalized' | 'peer' | 'general'>('personalized');
-  const [aiTips, setAiTips] = useState<Array<{title: string, description: string}>>([]);
+  const [aiTips, setAiTips] = useState<{title: string, description: string}[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
   const { darkMode } = useTheme();
   const { userData } = useUser();
