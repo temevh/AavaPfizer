@@ -51,12 +51,7 @@ export default function FloatingMenu() {
       router.push(route as any);
     }, 300);
   };
-
-  const rotation = rotationAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '90deg'],
-  });
-
+  
   const backdropOpacity = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 0.5],

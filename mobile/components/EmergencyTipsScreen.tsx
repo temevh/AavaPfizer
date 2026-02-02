@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Pressable,
   ScrollView,
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface EmergencyTipsScreenProps {
   navigation: {
@@ -45,6 +47,39 @@ function TipCard({ iconName, iconColor, title, description, bgColor, darkMode }:
 
 export function EmergencyTipsScreen({ navigation }: EmergencyTipsScreenProps) {
   const [activeTab, setActiveTab] = useState<'personalized' | 'peer' | 'general'>('personalized');
+  const [aiTips, setAiTips] = useState<{title: string, description: string}[]>([]);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const { darkMode } = useTheme();
+  const { userData } = useUser();
+
+  const generateAITips = async () => {
+    setLoadingAI(true);
+    try {
+      const { generateEmergencyTips } = await import('@/services/geminiService');
+
+      // Example current symptoms - in real app, get from latest migraine or ask user
+      const currentSymptoms = ['Light sensitivity', 'Nausea', 'Head pain'];
+
+      const tips = await generateEmergencyTips(
+        currentSymptoms,
+        {
+          ageBracket: userData?.ageBracket,
+          commonTriggers: ['Screen time', 'Lack of sleep'],
+          effectiveRemedies: ['Cold compress', 'Dark room']
+        }
+      );
+
+      setAiTips(tips);
+    } catch (error) {
+      console.error('Failed to generate AI tips:', error);
+      setAiTips([{
+        title: 'Error generating tips',
+        description: 'Please try again or check your internet connection.'
+      }]);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
   const personalizedTips = [
     {
@@ -212,7 +247,6 @@ export function EmergencyTipsScreen({ navigation }: EmergencyTipsScreenProps) {
 
   const { width } = Dimensions.get('window');
   const maxWidth = Math.min(width, 448);
-  const { darkMode } = useTheme();
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
@@ -310,6 +344,61 @@ export function EmergencyTipsScreen({ navigation }: EmergencyTipsScreenProps) {
           <View style={styles.tabDescriptionContainer}>
             <Text style={[styles.tabDescription, darkMode && styles.tabDescriptionDark]}>{getTabDescription()}</Text>
           </View>
+
+          {/* AI Tips Generation Button - Only for Personalized Tab */}
+          {activeTab === 'personalized' && (
+            <Pressable
+              onPress={generateAITips}
+              disabled={loadingAI}
+              style={({ pressed }) => [
+                styles.aiButton,
+                darkMode && styles.aiButtonDark,
+                pressed && styles.aiButtonPressed,
+                loadingAI && styles.aiButtonDisabled,
+              ]}
+            >
+              <Ionicons name="sparkles" size={20} color="#fff" />
+              <Text style={styles.aiButtonText}>
+                {loadingAI ? 'Generating AI Tips...' : 'Generate AI Tips for Current Symptoms'}
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Loading Indicator */}
+          {loadingAI && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#9333ea" />
+              <Text style={[styles.loadingText, darkMode && styles.loadingTextDark]}>
+                AI is analyzing your symptoms...
+              </Text>
+            </View>
+          )}
+
+          {/* AI-Generated Tips Section */}
+          {aiTips.length > 0 && activeTab === 'personalized' && (
+            <View style={styles.aiTipsSection}>
+              <View style={styles.aiTipsSectionHeader}>
+                <Ionicons name="sparkles" size={18} color="#9333ea" />
+                <Text style={[styles.aiTipsSectionTitle, darkMode && styles.aiTipsSectionTitleDark]}>
+                  AI-Generated Tips
+                </Text>
+              </View>
+              <View style={styles.tipsList}>
+                {aiTips.map((tip, index) => (
+                  <TipCard
+                    key={`ai-tip-${index}`}
+                    iconName="flash"
+                    iconColor="#9333ea"
+                    title={tip.title}
+                    description={tip.description}
+                    bgColor="#faf5ff"
+                    darkMode={darkMode}
+                  />
+                ))}
+              </View>
+              <View style={styles.aiTipsDivider} />
+            </View>
+          )}
 
           {/* Tips List */}
           <View style={styles.tipsList}>
@@ -505,5 +594,71 @@ const styles = StyleSheet.create({
   },
   disclaimerTextDark: {
     color: '#94a3b8',
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#9333ea',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  aiButtonDark: {
+    backgroundColor: '#7c3aed',
+  },
+  aiButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  aiButtonDisabled: {
+    opacity: 0.6,
+  },
+  aiButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  loadingTextDark: {
+    color: '#94a3b8',
+  },
+  aiTipsSection: {
+    marginBottom: 24,
+  },
+  aiTipsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  aiTipsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  aiTipsSectionTitleDark: {
+    color: '#e2e8f0',
+  },
+  aiTipsDivider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginTop: 24,
   },
 });

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from '@/components/NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDashboardStatus } from '@/hooks/useDashboardStatus';
-import { useUser } from '@/contexts/UserContext';
 
 interface WarningItemProps {
   iconName: keyof typeof Ionicons.glyphMap;

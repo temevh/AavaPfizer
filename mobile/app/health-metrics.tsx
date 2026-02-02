@@ -12,13 +12,13 @@ const chartHeight = 200;
 
 interface ChartProps {
   title: string;
-  data: Array<{ date: string; value: number; status: string }>;
+  data: { date: string; value: number; status: string }[];
   color: string;
   unit: string;
   darkMode?: boolean;
 }
 
-function generateMockData(days: number = 30): Array<{ date: string; value: number; status: string }> {
+function generateMockData(days: number = 30): { date: string; value: number; status: string }[] {
   const data = [];
   const today = new Date();
   

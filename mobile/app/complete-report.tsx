@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable, Share } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from '@/components/NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useDashboardStatus } from '@/hooks/useDashboardStatus';
-
-const { width } = Dimensions.get('window');
-const chartWidth = width - 40;
-const chartHeight = 200;
 
 interface ChartData {
   date: string;

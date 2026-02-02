@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from '@/components/NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
-import { useDashboardStatus } from '@/hooks/useDashboardStatus';
 
 const { width } = Dimensions.get('window');
 const chartWidth = width - 40;
@@ -12,7 +11,7 @@ const chartHeight = 220;
 
 interface LineChartProps {
   title: string;
-  data: Array<{ date: string; value: number; severity?: string; note?: string }>;
+  data: { date: string; value: number; severity?: string; note?: string }[];
   color: string;
   unit: string;
   darkMode?: boolean;

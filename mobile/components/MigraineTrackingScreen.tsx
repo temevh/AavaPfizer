@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  ActivityIndicator,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationBar } from './NavigationBar';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface MigraineTrackingScreenProps {
   navigation: {
@@ -34,7 +37,7 @@ const durationOptions = [
 ];
 
 export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenProps) {
-  const [intensity, setIntensity] = useState(5);
+  const [intensity, setIntensity] = useState(3);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [duration, setDuration] = useState('');
   const [notes, setNotes] = useState('');
@@ -42,7 +45,54 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [enableAIAnalysis, setEnableAIAnalysis] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string>('');
+  const [predictionResult, setPredictionResult] = useState<{prediction: string; confidence: number} | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const { darkMode } = useTheme();
+  const { userData, updateIntegrations } = useUser();
+
+  React.useEffect(() => {
+    if (userData?.dashboardData) {
+      const hasNullValues = 
+        userData.dashboardData.meals === null || 
+        userData.dashboardData.hydration === null || 
+        userData.dashboardData.alcohol === null;
+      
+      if (hasNullValues && userData.integrations) {
+        updateIntegrations(userData.integrations);
+      }
+    }
+  }, [userData?.dashboardData, userData?.integrations, updateIntegrations]);
+  
+  const sliderRef = useRef<View>(null);
+  const sliderLayout = useRef({ x: 0, width: 0 });
+  
+  const updateIntensityFromPosition = useCallback((position: number) => {
+    if (sliderLayout.current.width === 0) return;
+    
+    const percentage = Math.max(0, Math.min(1, position / sliderLayout.current.width));
+    const value = Math.round(percentage * 4 + 1);
+    setIntensity(Math.max(1, Math.min(5, value)));
+  }, []);
+  
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        const position = gestureState.x0 - sliderLayout.current.x;
+        updateIntensityFromPosition(position);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const position = gestureState.moveX - sliderLayout.current.x;
+        updateIntensityFromPosition(position);
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        const position = gestureState.moveX - sliderLayout.current.x;
+        updateIntensityFromPosition(position);
+      },
+    })
+  ).current;
 
   const symptoms = [
     'Aura',
@@ -63,35 +113,159 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
     );
   };
 
-  const handleSubmit = () => {
-    setShowSuccess(true);
-    
-    if (enableAIAnalysis) {
-      const data = {
-        intensity: intensity,
-        symptoms: selectedSymptoms,
-        duration: duration,
-        notes: notes,
-      }
-      console.log('Migraine Log Submitted:', data);
-      // Send data to backend/CNN for analysis
+  const handleSubmit = async () => {
+    if (!userData) {
+      console.error('No user data available');
+      return;
     }
-    
-    setTimeout(() => {
-      navigation.navigate('Main');
-    }, 1500);
+
+    setShowSuccess(true);
+
+    console.log('=== UserContext Data ===');
+    console.log('Full userData object:', JSON.stringify(userData, null, 2));
+    console.log('User name:', userData?.name);
+    console.log('Age bracket:', userData?.ageBracket);
+    console.log('Integrations:', userData?.integrations);
+    console.log('Dashboard data:', userData?.dashboardData);
+
+    if (enableAIAnalysis) {
+      try {
+        setLoadingInsights(true);
+
+        // Import the API functions and mapper
+        const { predict, saveData } = await import('@/services/migraineApi');
+        const { getFeaturesForPrediction, createSaveDataRequest } = await import('@/utils/dataMapper');
+        const { generateMigraineInsights } = await import('@/services/geminiService');
+
+        // Prepare migraine data
+        const migraineData = {
+          intensity,
+          selectedSymptoms,
+          duration,
+        };
+
+        // Step 1: Get features and make prediction
+        const features = getFeaturesForPrediction(userData, migraineData);
+        console.log('Sending prediction request with features:', features);
+
+        const prediction = await predict(features);
+        console.log('Prediction result:', prediction);
+
+        // Store prediction result for display
+        setPredictionResult({
+          prediction: prediction.prediction,
+          confidence: prediction.confidence,
+        });
+
+        // Step 2: Generate AI insights using Gemini
+        const insights = await generateMigraineInsights(
+          selectedSymptoms,
+          intensity,
+          duration,
+          prediction.prediction,
+          prediction.confidence,
+          userData?.dashboardData
+        );
+        console.log('AI Insights:', insights);
+        setAiInsights(insights);
+
+        // Step 3: Save data to BigQuery with prediction
+        //const saveRequest = createSaveDataRequest(userData, migraineData, prediction);
+        //console.log('Saving data to backend:', saveRequest);
+
+        //const saveResult = await saveData(saveRequest);
+        //console.log('Save result:', saveResult);
+
+      } catch (error) {
+        console.error('Error during AI analysis:', error);
+        setAiInsights('Unable to generate insights at this time. Please try again later.');
+        // Continue with success screen even if API fails
+      } finally {
+        setLoadingInsights(false);
+      }
+    }
+    console.log('========================');
+  };
+
+  const handleDismiss = () => {
+    navigation.navigate('Main');
   };
 
   if (showSuccess) {
     return (
-      <View style={styles.successContainer}>
-        <View style={styles.successContent}>
-          <View style={styles.successIconContainer}>
-            <Ionicons name="checkmark-circle" size={40} color="#10b981" />
+      <View style={[styles.successContainer, darkMode && styles.successContainerDark]}>
+        <ScrollView
+          style={styles.successScrollView}
+          contentContainerStyle={styles.successScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.successContent}>
+
+
+            {/* Loading AI Insights */}
+            {loadingInsights && (
+              <View style={[styles.insightsLoadingContainer, darkMode && styles.insightsLoadingContainerDark]}>
+                <View style={styles.loadingIconWrapper}>
+                  <ActivityIndicator 
+                    size="large" 
+                    color="#9333ea" 
+                    style={styles.loadingSpinner}
+                  />
+              
+                </View>
+                <Text style={[styles.insightsLoadingTitle, darkMode && styles.textDark]}>
+                  Analyzing Your Data
+                </Text>
+                <Text style={[styles.insightsLoadingText, darkMode && styles.successSubtitleDark]}>
+                  Our AI is generating personalized insights based on your migraine patterns...
+                </Text>
+              </View>
+            )}
+
+            {/* Prediction Result */}
+            {predictionResult && !loadingInsights && (
+              <View style={[styles.predictionCard, darkMode && styles.predictionCardDark]}>
+                <View style={styles.predictionHeader}>
+                  <Ionicons name="analytics" size={20} color="#9333ea" />
+                  <Text style={[styles.predictionHeaderText, darkMode && styles.textDark]}>
+                    AI Prediction
+                  </Text>
+                </View>
+                <Text style={[styles.predictionType, darkMode && styles.textDark]}>
+                  {predictionResult.prediction}
+                </Text>
+                <Text style={[styles.predictionConfidence, darkMode && styles.successSubtitleDark]}>
+                  Confidence: {Math.round(predictionResult.confidence * 100)}%
+                </Text>
+              </View>
+            )}
+
+            {/* AI Insights */}
+            {aiInsights && !loadingInsights && (
+              <View style={[styles.insightsCard, darkMode && styles.insightsCardDark]}>
+                <View style={styles.insightsHeader}>
+                  <Ionicons name="sparkles" size={20} color="#9333ea" />
+                  <Text style={[styles.insightsHeaderText, darkMode && styles.textDark]}>
+                    Personalized Insights
+                  </Text>
+                </View>
+                <Text style={[styles.insightsText, darkMode && styles.successSubtitleDark]}>
+                  {aiInsights}
+                </Text>
+              </View>
+            )}
+
+            {/* Dismiss Button - Show when not loading or when AI is disabled */}
+            {(!enableAIAnalysis || !loadingInsights) && (
+              <Pressable
+                onPress={handleDismiss}
+                style={[styles.dismissButton, darkMode && styles.dismissButtonDark]}
+              >
+                <Text style={styles.dismissButtonText}>Back to Dashboard</Text>
+              </Pressable>
+            )}
           </View>
-          <Text style={styles.successTitle}>Migraine Logged</Text>
-          <Text style={styles.successSubtitle}>Data saved successfully</Text>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -109,29 +283,54 @@ export function MigraineTrackingScreen({ navigation }: MigraineTrackingScreenPro
         <View style={[styles.content, { maxWidth }]}>
           {/* Quick Intensity */}
           <View style={[styles.section, darkMode && styles.sectionDark]}>
-            <Text style={[styles.label, darkMode && styles.textDark]}>Pain Level</Text>
-            <View style={styles.intensityQuick}>
-              {[1, 2, 3, 4, 5].map((level) => (
-                <Pressable
-                  key={level}
-                  onPress={() => setIntensity(level)}
-                  style={[
-                    styles.intensityButton,
-                    intensity === level && styles.intensityButtonSelected,
-                    darkMode && styles.intensityButtonDark,
-                    intensity === level && darkMode && styles.intensityButtonSelectedDark,
-                  ]}
-                >
-                  <Text
+            <View style={styles.sliderHeader}>
+              <Text style={[styles.label, darkMode && styles.textDark]}>Pain Level</Text>
+              <Text style={[styles.intensityValue, darkMode && styles.textDark]}>{intensity}</Text>
+            </View>
+            <View
+              ref={sliderRef}
+              style={styles.customSliderContainer}
+              onLayout={(e) => {
+                sliderLayout.current.width = e.nativeEvent.layout.width;
+                sliderRef.current?.measureInWindow((x, y, width, height) => {
+                  sliderLayout.current.x = x;
+                });
+              }}
+              {...panResponder.panHandlers}
+            >
+              <View style={[styles.sliderTrackLine, darkMode && styles.sliderTrackLineDark]}>
+                <View style={[
+                  styles.sliderFillLine,
+                  darkMode && styles.sliderFillLineDark,
+                  { width: `${((intensity - 1) / 4) * 100}%` }
+                ]} />
+              </View>
+              <View style={styles.sliderDots}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <View
+                    key={level}
                     style={[
-                      styles.intensityButtonText,
-                      intensity === level && styles.intensityButtonTextSelected,
-                      darkMode && styles.textDark,
+                      styles.sliderDot,
+                      intensity >= level && styles.sliderDotActive,
+                      darkMode && styles.sliderDotDark,
+                      intensity >= level && darkMode && styles.sliderDotActiveDark,
                     ]}
-                  >
-                    {level}
-                  </Text>
-                </Pressable>
+                  />
+                ))}
+              </View>
+              <View
+                style={[
+                  styles.sliderThumb,
+                  darkMode && styles.sliderThumbDark,
+                  { left: `${((intensity - 1) / 4) * 100}%` }
+                ]}
+              />
+            </View>
+            <View style={styles.sliderLabels}>
+              {[1, 2, 3, 4, 5].map((level) => (
+                <Text key={level} style={[styles.sliderLabelText, darkMode && styles.textDark]}>
+                  {level}
+                </Text>
               ))}
             </View>
           </View>
@@ -336,69 +535,95 @@ const styles = StyleSheet.create({
   textDark: {
     color: '#e2e8f0',
   },
-  intensityQuick: {
+  sliderHeader: {
     flexDirection: 'row',
-    gap: 6,
     justifyContent: 'space-between',
-  },
-  intensityButton: {
-    flex: 1,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  intensityValue: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#9333ea',
+  },
+  customSliderContainer: {
+    height: 44,
     justifyContent: 'center',
+    marginVertical: 8,
   },
-  intensityButtonDark: {
-    backgroundColor: '#0f172a',
-    borderColor: '#475569',
+  sliderTrackLine: {
+    position: 'absolute',
+    width: '100%',
+    height: 6,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 3,
   },
-  intensityButtonSelected: {
+  sliderTrackLineDark: {
+    backgroundColor: '#475569',
+  },
+  sliderFillLine: {
+    height: '100%',
+    backgroundColor: '#9333ea',
+    borderRadius: 3,
+  },
+  sliderFillLineDark: {
+    backgroundColor: '#7e22ce',
+  },
+  sliderDots: {
+    position: 'absolute',
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
+  },
+  sliderDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#e2e8f0',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  sliderDotDark: {
+    backgroundColor: '#334155',
+    borderColor: '#1e293b',
+  },
+  sliderDotActive: {
     backgroundColor: '#9333ea',
     borderColor: '#9333ea',
   },
-  intensityButtonSelectedDark: {
-    backgroundColor: '#7e22ce',
-    borderColor: '#7e22ce',
+  sliderDotActiveDark: {
+    backgroundColor: '#a855f7',
+    borderColor: '#a855f7',
   },
-  intensityButtonText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#334155',
+  sliderThumb: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#9333ea',
+    marginLeft: -12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  intensityButtonTextSelected: {
-    color: '#fff',
+  sliderThumbDark: {
+    backgroundColor: '#a855f7',
   },
-  intensityContainer: {
-    gap: 12,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  intensityLabels: {
+  sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: 0,
+    marginTop: 8,
   },
-  intensityLabel: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  intensityDisplay: {
-    width: 64,
-    height: 64,
-    backgroundColor: '#f3e8ff',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  intensityValue: {
-    fontSize: 24,
+  sliderLabelText: {
+    fontSize: 18,
     fontWeight: '500',
-    color: '#9333ea',
+    color: '#64748b',
+    width: 18,
+    textAlign: 'center',
   },
   symptomsGrid: {
     flexDirection: 'row',
@@ -558,12 +783,23 @@ const styles = StyleSheet.create({
   successContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  successContainerDark: {
+    backgroundColor: '#0f172a',
+  },
+  successScrollView: {
+    flex: 1,
+  },
+  successScrollContent: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    minHeight: '100%',
   },
   successContent: {
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 448,
   },
   successIconContainer: {
     width: 80,
@@ -583,6 +819,182 @@ const styles = StyleSheet.create({
   successSubtitle: {
     fontSize: 16,
     color: '#64748b',
+    marginBottom: 24,
+  },
+  successSubtitleDark: {
+    color: '#94a3b8',
+  },
+  insightsLoadingContainer: {
+    width: '100%',
+    backgroundColor: '#faf5ff',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  insightsLoadingContainerDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  loadingIconWrapper: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  loadingIconBackground: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#fff',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  loadingIconBackgroundDark: {
+    backgroundColor: '#0f172a',
+  },
+  loadingSpinner: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+  },
+  insightsLoadingTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  insightsLoadingText: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  loadingDotsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#9333ea',
+  },
+  loadingDot1: {
+    opacity: 0.4,
+  },
+  loadingDot2: {
+    opacity: 0.7,
+  },
+  loadingDot3: {
+    opacity: 1,
+  },
+  predictionCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  predictionCardDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#4c1d95',
+  },
+  predictionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  predictionHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  predictionType: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  predictionConfidence: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  insightsCard: {
+    width: '100%',
+    backgroundColor: '#faf5ff',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+  },
+  insightsCardDark: {
+    backgroundColor: '#1e1b4b',
+    borderColor: '#4c1d95',
+  },
+  insightsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  insightsHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  insightsText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#64748b',
+  },
+  dismissButton: {
+    width: '100%',
+    backgroundColor: '#9333ea',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#9333ea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  dismissButtonDark: {
+    backgroundColor: '#7e22ce',
+  },
+  dismissButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
